@@ -6,7 +6,7 @@ use termion::screen::AlternateScreen;
 use tui::backend::TermionBackend;
 use tui::layout::{Constraint, Layout, Direction};
 use tui::style::{Color, Modifier, Style};
-use tui::widgets::{Block, Borders, Row, Table, Widget, Text};
+use tui::widgets::{Block, Borders, Row, Table, Widget, Text, List};
 use tui::Terminal;
 use std::sync::mpsc;
 use std::thread;
@@ -65,7 +65,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         terminal.draw(|mut f| {
             let size = f.size();
             let chunks = Layout::default()
-                .margin(1)
+                .margin(0)
                 .direction(Direction::Vertical)
                 .constraints(
                     [
@@ -74,34 +74,33 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     ].as_ref()
                 )
                 .split(f.size());
+            let lower_chunks = Layout::default()
+                .margin(0)
+                .direction(Direction::Horizontal)
+                .constraints(
+                    [
+                        Constraint::Percentage(10),
+
+                        Constraint::Percentage(90),
+                    ].as_ref()
+                )
+                .split(chunks[1]);
+
+            Block::default()
+                .title("Configs")
+                .borders(Borders::ALL)
+                .render(&mut f, lower_chunks[1]);
+
+            let text = ["Main", "Settings"].iter().map(|x| {
+                Text::styled(x.to_owned(), Style::default())
+            });
+            List::new(text)
+                .block(Block::default().title("Tabs").borders(Borders::ALL))
+                .render(&mut f, lower_chunks[0]);
 
             cells::Spreadsheet::new()
-                .block(Block::default().borders(Borders::ALL))
                 .render(&mut f, chunks[0]);
         })?;
-        /*
-        terminal.draw(|mut f| {
-            let selected_style = Style::default().fg(Color::Red).modifier(Modifier::BOLD);
-            let normal_style = Style::default().fg(Color::White);
-            let header = ["Header1", "Header2", "Header3"];
-            let rows = app.items.iter().enumerate().map(|(i, item)| {
-                if i == app.selected {
-                    Row::StyledData(item.into_iter(), selected_style)
-                } else {
-                    Row::StyledData(item.into_iter(), normal_style)
-                }
-            });
-
-            let rects = Layout::default()
-                .constraints([Constraint::Percentage(100)].as_ref())
-                .margin(0)
-                .split(f.size());
-            Table::new(header.into_iter(), rows)
-                .block(Block::default().borders(Borders::ALL).title("Table"))
-                .widths(&[10, 10, 10])
-                .render(&mut f, rects[0]);
-        })?;
-        */
 
         match events.next()? {
             Key::Char('q') => {
