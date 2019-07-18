@@ -43,23 +43,89 @@ impl<'a> Widget for Spreadsheet<'a> {
             None => area,
         };
 
-        let height = table_area.top() - table_area.bottom();
+
+        let height = table_area.bottom() - table_area.top();
         let width = table_area.right() - table_area.left();
 
-        let num_hor = ((height as f64) / 3.).floor() as usize;
-        let num_ver = ((width as f64) / (self.width + 2) as f64).floor() as usize;
-        for y in 0..num_hor {
-            buf.set_stringn(0, 0, format!("{}, {}", num_hor, num_ver), 10, Style::default());
-            for x in 0..num_ver {
+        let num_ver = ((height as f64) / 3.).floor() as usize;
+        let num_hor = ((width as f64) / (self.width + 2) as f64).floor() as usize;
+        //buf.set_string(table_area.left(), table_area.top(), format!("{}, {}", width, height), Style::default());
+        //buf.set_string(table_area.left(), table_area.top()+1, format!("{}, {}", num_hor, num_ver), Style::default());
+
+        let line_all = "┼";
+        for x in 0..(width/self.width + 1) {
+            for y in 0..height {
+                buf.get_mut(
+                    table_area.left() + (x*self.width) as u16,
+                    table_area.top() + y,
+                )
+                    .set_symbol(line::VERTICAL)
+                    .set_style(Style::default());
             }
         }
+
+        for y in 0..(height/2 + 1) {
+            for x in 0..width {
+                if x % self.width == 0 {
+                    buf.get_mut(
+                        table_area.left() + x,
+                        table_area.top() + (y*2) as u16,
+                    )
+                        .set_symbol(line_all)
+                        .set_style(Style::default());
+                } else {
+                    buf.get_mut(
+                        table_area.left() + x,
+                        table_area.top() + (y*2) as u16,
+                    )
+                        .set_symbol(line::HORIZONTAL)
+                        .set_style(Style::default());
+                }
+            }
+        }
+
+        for x in 0..(width/self.width + 1) {
+            buf.get_mut(
+                table_area.left() + (x*self.width) as u16,
+                table_area.top(),
+            )
+                .set_symbol(line::HORIZONTAL_DOWN)
+                .set_style(Style::default());
+        }
+
         /*
-        let mut x = 0;
+        for y in 0..num_ver {
+            for x in 0..num_hor {
+                buf.get_mut(
+                    table_area.left() + (x as u16 * self.width) as u16,
+                    table_area.top() + (y*3) as u16,
+                )
+                    .set_symbol(line::TOP_LEFT)
+                    .set_style(Style::default());
+                for z in 1..(self.width+1) {
+                    buf.get_mut(
+                        table_area.left() + (x as u16 * self.width) as u16 + z,
+                        table_area.top() + (y*3) as u16,
+                    )
+                        .set_symbol(line::HORIZONTAL)
+                        .set_style(Style::default());
+                }
+                buf.get_mut(
+                    table_area.left() + (x as u16 * self.width) as u16 + self.width+1,
+                    table_area.top() + (y*3) as u16,
+                )
+                    .set_symbol(line::TOP_RIGHT)
+                    .set_style(Style::default());
+            }
+        }
+        */
 
 
+        /*
+        let widths_ = [10, 10, 10];
         let mut x = 0;
-        let mut widths = Vec::with_capacity(self.widths.len());
-        for width in self.widths.iter() {
+        let mut widths = Vec::with_capacity(widths_.len());
+        for width in widths_.iter() {
             if x + width < table_area.width {
                 widths.push(*width);
             }

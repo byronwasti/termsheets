@@ -99,6 +99,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .render(&mut f, lower_chunks[0]);
 
             cells::Spreadsheet::new()
+                .block(Block::default().title("Spreadsheet").borders(Borders::ALL))
                 .render(&mut f, chunks[0]);
         })?;
 
