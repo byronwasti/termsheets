@@ -31,6 +31,33 @@ impl<'a> Spreadsheet<'a> {
         self.block = Some(block);
         self
     }
+
+    pub fn draw_headers(&self, area: Rect, buf: &mut Buffer) {
+        let width = area.right() - area.left();
+        let height = area.bottom() - area.top();
+        for y in 0..(height/2) {
+            let y = y+1;
+            buf.set_stringn(
+                area.left(),
+                area.top() + y*2,
+                format!("{}", y),
+                3,
+                Style::default()
+            );
+        }
+
+        for x in 0..(width/self.width) {
+            let x = x+1;
+            let c = (x as u8 + 64) as char;
+            buf.set_stringn(
+                area.left() + x*self.width - self.width/4,
+                area.top(),
+                format!("{}", c),
+                3,
+                Style::default()
+            );
+        }
+    }
 }
 
 impl<'a> Widget for Spreadsheet<'a> {
@@ -43,40 +70,44 @@ impl<'a> Widget for Spreadsheet<'a> {
             None => area,
         };
 
+        self.draw_headers(table_area, buf);
 
-        let height = table_area.bottom() - table_area.top();
-        let width = table_area.right() - table_area.left();
 
-        let num_ver = ((height as f64) / 3.).floor() as usize;
-        let num_hor = ((width as f64) / (self.width + 2) as f64).floor() as usize;
-        //buf.set_string(table_area.left(), table_area.top(), format!("{}, {}", width, height), Style::default());
-        //buf.set_string(table_area.left(), table_area.top()+1, format!("{}, {}", num_hor, num_ver), Style::default());
+        let cells_width = table_area.right() - table_area.left() - 3;
+        let cells_height = table_area.bottom() - table_area.top() - 1;
+        let cells_area = Rect::new(
+            table_area.left() + 3,
+            table_area.top() + 1,
+            cells_width, cells_height);
+
+        let num_ver = ((cells_height as f64) / 3.).floor() as usize;
+        let num_hor = ((cells_width as f64) / (self.width + 2) as f64).floor() as usize;
 
         let line_all = "┼";
-        for x in 0..(width/self.width + 1) {
-            for y in 0..height {
+        for x in 0..(cells_width/self.width + 1) {
+            for y in 0..cells_height {
                 buf.get_mut(
-                    table_area.left() + (x*self.width) as u16,
-                    table_area.top() + y,
+                    cells_area.left() + (x*self.width) as u16,
+                    cells_area.top() + y,
                 )
                     .set_symbol(line::VERTICAL)
                     .set_style(Style::default());
             }
         }
 
-        for y in 0..(height/2 + 1) {
-            for x in 0..width {
+        for y in 0..(cells_height/2) {
+            for x in 0..cells_width {
                 if x % self.width == 0 {
                     buf.get_mut(
-                        table_area.left() + x,
-                        table_area.top() + (y*2) as u16,
+                        cells_area.left() + x,
+                        cells_area.top() + (y*2) as u16,
                     )
                         .set_symbol(line_all)
                         .set_style(Style::default());
                 } else {
                     buf.get_mut(
-                        table_area.left() + x,
-                        table_area.top() + (y*2) as u16,
+                        cells_area.left() + x,
+                        cells_area.top() + (y*2) as u16,
                     )
                         .set_symbol(line::HORIZONTAL)
                         .set_style(Style::default());
@@ -84,64 +115,13 @@ impl<'a> Widget for Spreadsheet<'a> {
             }
         }
 
-        for x in 0..(width/self.width + 1) {
+        for x in 0..(cells_width/self.width + 1) {
             buf.get_mut(
-                table_area.left() + (x*self.width) as u16,
-                table_area.top(),
+                cells_area.left() + (x*self.width) as u16,
+                cells_area.top(),
             )
                 .set_symbol(line::HORIZONTAL_DOWN)
                 .set_style(Style::default());
         }
-
-        /*
-        for y in 0..num_ver {
-            for x in 0..num_hor {
-                buf.get_mut(
-                    table_area.left() + (x as u16 * self.width) as u16,
-                    table_area.top() + (y*3) as u16,
-                )
-                    .set_symbol(line::TOP_LEFT)
-                    .set_style(Style::default());
-                for z in 1..(self.width+1) {
-                    buf.get_mut(
-                        table_area.left() + (x as u16 * self.width) as u16 + z,
-                        table_area.top() + (y*3) as u16,
-                    )
-                        .set_symbol(line::HORIZONTAL)
-                        .set_style(Style::default());
-                }
-                buf.get_mut(
-                    table_area.left() + (x as u16 * self.width) as u16 + self.width+1,
-                    table_area.top() + (y*3) as u16,
-                )
-                    .set_symbol(line::TOP_RIGHT)
-                    .set_style(Style::default());
-            }
-        }
-        */
-
-
-        /*
-        let widths_ = [10, 10, 10];
-        let mut x = 0;
-        let mut widths = Vec::with_capacity(widths_.len());
-        for width in widths_.iter() {
-            if x + width < table_area.width {
-                widths.push(*width);
-            }
-            x += *width;
-        }
-
-        let mut y = table_area.top();
-        let remaining = (table_area.bottom() - y) as usize;
-        for (i, row) in self.data.iter().take(remaining).enumerate() {
-            x = table_area.left();
-            for (w, elt) in widths.iter().zip(row) {
-                buf.set_stringn(x, y+i as u16, format!("{}", elt), *w as usize, Style::default());
-                buf.set_stringn(x + *w, y+i as u16, line::VERTICAL, 1, Style::default());
-                x += *w + 1;
-            }
-        }
-        */
     }
 }

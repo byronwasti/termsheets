@@ -14,38 +14,6 @@ use termion::input::TermRead;
 
 mod cells;
 
-
-struct App<'a> {
-    items: Vec<Vec<&'a str>>,
-    selected: usize,
-}
-
-impl<'a> App<'a> {
-    fn new() -> App<'a> {
-        App {
-            items: vec![
-                vec!["Row11", "Row12", "Row13"],
-                vec!["Row21", "Row22", "Row23"],
-                vec!["Row21", "Row22", "Row23"],
-                vec!["Row21", "Row22", "Row23"],
-                vec!["Row21", "Row22", "Row23"],
-                vec!["Row21", "Row22", "Row23"],
-                vec!["Row21", "Row22", "Row23"],
-                vec!["Row21", "Row22", "Row23"],
-                vec!["Row21", "Row22", "Row23"],
-                vec!["Row21", "Row22", "Row23"],
-                vec!["Row21", "Row22", "Row23"],
-                vec!["Row21", "Row22", "Row23"],
-                vec!["Row31", "Row32", "Row33"],
-                vec!["Row41", "Row42", "Row43"],
-                vec!["Row51", "Row52", "Row53"],
-                vec!["Row61", "Row62", "Row63"],
-            ],
-            selected: 0,
-        }
-    }
-}
-
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Terminal initialization
     let stdout = io::stdout().into_raw_mode()?;
@@ -56,9 +24,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     terminal.hide_cursor()?;
 
     let events = Events::new();
-
-    // App
-    let mut app = App::new();
 
     // Input
     loop {
@@ -108,17 +73,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 break;
             }
             Key::Down | Key::Char('j') => {
-                app.selected += 1;
-                if app.selected > app.items.len() - 1 {
-                    app.selected = 0;
-                }
             }
             Key::Up | Key::Char('k') => {
-                if app.selected > 0 {
-                    app.selected -= 1;
-                } else {
-                    app.selected = app.items.len() - 1;
-                }
             }
             _ => {}
         };
