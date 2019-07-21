@@ -1,16 +1,16 @@
 use std::io;
+use std::sync::mpsc;
+use std::thread;
 use termion::event::Key;
 use termion::input::MouseTerminal;
+use termion::input::TermRead;
 use termion::raw::IntoRawMode;
 use termion::screen::AlternateScreen;
 use tui::backend::TermionBackend;
-use tui::layout::{Constraint, Layout, Direction};
+use tui::layout::{Constraint, Direction, Layout};
 use tui::style::{Color, Modifier, Style};
-use tui::widgets::{Block, Borders, Row, Table, Widget, Text, List};
+use tui::widgets::{Block, Borders, List, Row, Table, Text, Widget};
 use tui::Terminal;
-use std::sync::mpsc;
-use std::thread;
-use termion::input::TermRead;
 
 mod cells;
 
@@ -32,23 +32,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let chunks = Layout::default()
                 .margin(0)
                 .direction(Direction::Vertical)
-                .constraints(
-                    [
-                        Constraint::Percentage(70),
-                        Constraint::Percentage(30),
-                    ].as_ref()
-                )
+                .constraints([Constraint::Percentage(70), Constraint::Percentage(30)].as_ref())
                 .split(f.size());
             let lower_chunks = Layout::default()
                 .margin(0)
                 .direction(Direction::Horizontal)
-                .constraints(
-                    [
-                        Constraint::Percentage(10),
-
-                        Constraint::Percentage(90),
-                    ].as_ref()
-                )
+                .constraints([Constraint::Percentage(10), Constraint::Percentage(90)].as_ref())
                 .split(chunks[1]);
 
             Block::default()
@@ -56,9 +45,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .borders(Borders::ALL)
                 .render(&mut f, lower_chunks[1]);
 
-            let text = ["Main", "Settings"].iter().map(|x| {
-                Text::styled(x.to_owned(), Style::default())
-            });
+            let text = ["Main", "Settings"]
+                .iter()
+                .map(|x| Text::styled(x.to_owned(), Style::default()));
             List::new(text)
                 .block(Block::default().title("Tabs").borders(Borders::ALL))
                 .render(&mut f, lower_chunks[0]);
@@ -72,10 +61,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             Key::Char('q') => {
                 break;
             }
-            Key::Down | Key::Char('j') => {
-            }
-            Key::Up | Key::Char('k') => {
-            }
+            Key::Down | Key::Char('j') => {}
+            Key::Up | Key::Char('k') => {}
             _ => {}
         };
     }
@@ -83,13 +70,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-
 /// A small event handler that wrap termion input and tick events. Each event
 /// type is handled in its own thread and returned to a common `Receiver`
 pub struct Events {
     rx: mpsc::Receiver<Key>,
 }
-
 
 impl Events {
     pub fn new() -> Events {
@@ -109,9 +94,7 @@ impl Events {
             }
         });
 
-        Events {
-            rx,
-        }
+        Events { rx }
     }
 
     pub fn next(&self) -> Result<Key, mpsc::RecvError> {
