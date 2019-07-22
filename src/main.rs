@@ -41,7 +41,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .split(chunks[1]);
 
             Block::default()
-                .title("Configs")
                 .borders(Borders::ALL)
                 .render(&mut f, lower_chunks[1]);
 
@@ -49,11 +48,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .iter()
                 .map(|x| Text::styled(x.to_owned(), Style::default()));
             List::new(text)
-                .block(Block::default().title("Tabs").borders(Borders::ALL))
+                .block(Block::default().borders(Borders::ALL))
                 .render(&mut f, lower_chunks[0]);
 
             cells::Spreadsheet::new()
-                .block(Block::default().title("Spreadsheet").borders(Borders::ALL))
+                //.block(Block::default().borders(Borders::ALL))
                 .render(&mut f, chunks[0]);
         })?;
 

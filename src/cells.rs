@@ -14,22 +14,34 @@ pub struct Item {
 }
 
 pub struct Spreadsheet<'a> {
-    width: u16,
+    cell_width: u16,
+    cell_height: u16,
     data: Vec<Item>,
+    scroll_offset: (usize, usize),
     block: Option<Block<'a>>,
+}
+
+impl<'a> Default for Spreadsheet<'a> {
+    fn default() -> Self {
+        Self {
+            cell_width: 10,
+            cell_height: 1,
+            data: Vec::new(),
+            scroll_offset: (0, 0),
+            block: None,
+        }
+    }
 }
 
 impl<'a> Spreadsheet<'a> {
     pub fn new() -> Self {
-        let width = 10;
         let mut data = Vec::new();
         data.push(Item {
             x: 2,
             y: 3,
-            data: "Test".to_owned(),
+            data: "Test__A".to_owned(),
         });
-        let block = None;
-        Self { width, data, block }
+        Self { data, ..Self::default() }
     }
 
     pub fn block(mut self, block: Block<'a>) -> Spreadsheet<'a> {
@@ -38,24 +50,28 @@ impl<'a> Spreadsheet<'a> {
     }
 
     pub fn draw_headers(&self, area: Rect, buf: &mut Buffer) {
-        let width = area.right() - area.left();
-        let height = area.bottom() - area.top();
-        for y in 0..(height / 2) {
-            let y = y + 1;
+        for i in 0..(area.height / (self.cell_height + 1)) {
+            let y = area.top() + i*(self.cell_height+1) + 1 + self.cell_height/2;
+            if y >= area.bottom() {
+                continue;
+            }
             buf.set_stringn(
                 area.left(),
-                area.top() + y * 2,
-                format!("{}", y),
+                y,
+                format!("{}", i+1),
                 3,
                 Style::default(),
             );
         }
 
-        for x in 0..(width / self.width) {
-            let x = x + 1;
-            let c = (x as u8 + 64) as char;
+        for i in 0..(area.width / (self.cell_width + 1)) {
+            let c = (i as u8 + 65) as char;
+            let x = area.left() + i * (self.cell_width+1) + 3 + self.cell_width/2;
+            if x >= area.right() {
+                continue;
+            }
             buf.set_stringn(
-                area.left() + x * self.width - self.width / 4,
+                x,
                 area.top(),
                 format!("{}", c),
                 3,
@@ -65,50 +81,81 @@ impl<'a> Spreadsheet<'a> {
     }
 
     pub fn draw_cells(&self, area: Rect, buf: &mut Buffer) {
-        let width = area.right() - area.left();
-        let height = area.bottom() - area.top();
-
-        let num_ver = ((height as f64) / 3.).floor() as usize;
-        let num_hor = ((width as f64) / (self.width + 2) as f64).floor() as usize;
-
         let line_all = "┼";
-        for x in 0..(width / self.width) {
-            for y in 0..height {
-                buf.get_mut(area.left() + (x * self.width) as u16, area.top() + y)
+
+        let num_horizontal = (area.width - 1) / (self.cell_width + 1);
+        for i in 0..num_horizontal+1 {
+            let x = area.left() + (i * (self.cell_width+1)) as u16;
+            if x >= area.right() {
+                continue;
+            }
+            for y in area.top()..area.bottom() {
+                buf.get_mut(x, y)
                     .set_symbol(line::VERTICAL)
                     .set_style(Style::default());
             }
         }
 
-        for y in 0..(height / 2) {
-            for x in 0..width {
-                if x % self.width == 0 {
-                    buf.get_mut(area.left() + x, area.top() + (y * 2) as u16)
-                        .set_symbol(line_all)
-                        .set_style(Style::default());
-                } else {
-                    buf.get_mut(area.left() + x, area.top() + (y * 2) as u16)
-                        .set_symbol(line::HORIZONTAL)
-                        .set_style(Style::default());
-                }
+        let num_vertical = (area.height-1) / (self.cell_height + 1);
+        for i in 0..num_vertical+1 {
+            let y = area.top() + (i * (self.cell_height+1)) as u16;
+            if y >= area.bottom() {
+                continue;
+            }
+            for x in area.left()..area.right() {
+                buf.get_mut(x, y)
+                    .set_symbol(line::HORIZONTAL)
+                    .set_style(Style::default());
             }
         }
 
-        for x in 0..(width / self.width) {
-            buf.get_mut(area.left() + (x * self.width) as u16, area.top())
-                .set_symbol(line::HORIZONTAL_DOWN)
-                .set_style(Style::default());
+        for j in 0..num_vertical+1 {
+            let y = area.top() + (j * (self.cell_height+1)) as u16;
+            if y >= area.bottom() {
+                continue;
+            }
+            for i in 0..num_horizontal+1 {
+                let x = area.left() + (i * (self.cell_width+1)) as u16;
+                if x >= area.right() {
+                    continue;
+                }
+
+                buf.get_mut(x, y)
+                    .set_symbol(line_all)
+                    .set_style(Style::default());
+            }
         }
 
-        for y in 0..(height / 2) {
-            buf.get_mut(area.left(), area.top() + (y * 2) as u16)
-                .set_symbol(line::VERTICAL_RIGHT)
-                .set_style(Style::default());
+        if self.scroll_offset.0 == 0 {
+            for j in 0..num_vertical+1 {
+                let y = area.top() + (j * (self.cell_height+1)) as u16;
+                if y >= area.bottom() {
+                    continue;
+                }
+                buf.get_mut(area.left(), y)
+                    .set_symbol(line::VERTICAL_RIGHT)
+                    .set_style(Style::default());
+            }
         }
 
-        buf.get_mut(area.left(), area.top())
-            .set_symbol(line::TOP_LEFT)
-            .set_style(Style::default());
+        if self.scroll_offset.1 == 0 {
+            for i in 0..num_horizontal+1 {
+                let x = area.left() + (i * (self.cell_width+1)) as u16;
+                if x >= area.right() {
+                    continue;
+                }
+                buf.get_mut(x, area.top())
+                    .set_symbol(line::HORIZONTAL_DOWN)
+                    .set_style(Style::default());
+            }
+        }
+
+
+        if self.scroll_offset == (0, 0) {
+            buf.get_mut(area.left(), area.top())
+                .set_symbol(line::TOP_LEFT)
+                .set_style(Style::default());
+        }
     }
 
     pub fn draw_data(&self, area: Rect, buf: &mut Buffer) {
@@ -118,10 +165,10 @@ impl<'a> Spreadsheet<'a> {
             let data = &d.data;
 
             buf.set_stringn(
-                x * (self.width + 2) + 1,
-                y * 3,
+                area.left() + x * (self.cell_width + 1) + 1,
+                area.top() + y * (self.cell_height + 1) + 1,
                 data,
-                self.width as usize,
+                self.cell_width as usize,
                 Style::default(),
             );
         }
@@ -140,8 +187,8 @@ impl<'a> Widget for Spreadsheet<'a> {
 
         self.draw_headers(table_area, buf);
 
-        let cells_width = table_area.right() - table_area.left() - 3;
-        let cells_height = table_area.bottom() - table_area.top() - 1;
+        let cells_width = table_area.width - 3;
+        let cells_height = table_area.height - 1;
         let cells_area = Rect::new(
             table_area.left() + 3,
             table_area.top() + 1,
