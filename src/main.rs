@@ -26,6 +26,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let events = Events::new();
 
     // Input
+    let mut cursor_pos = (0, 0);
     loop {
         terminal.draw(|mut f| {
             let size = f.size();
@@ -34,25 +35,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .direction(Direction::Vertical)
                 .constraints([Constraint::Percentage(70), Constraint::Percentage(30)].as_ref())
                 .split(f.size());
-            let lower_chunks = Layout::default()
-                .margin(0)
-                .direction(Direction::Horizontal)
-                .constraints([Constraint::Percentage(10), Constraint::Percentage(90)].as_ref())
-                .split(chunks[1]);
 
             Block::default()
                 .borders(Borders::ALL)
-                .render(&mut f, lower_chunks[1]);
-
-            let text = ["Main", "Settings"]
-                .iter()
-                .map(|x| Text::styled(x.to_owned(), Style::default()));
-            List::new(text)
-                .block(Block::default().borders(Borders::ALL))
-                .render(&mut f, lower_chunks[0]);
+                .render(&mut f, chunks[1]);
 
             cells::Spreadsheet::new()
-                //.block(Block::default().borders(Borders::ALL))
+                .set_cursor_pos(cursor_pos)
                 .render(&mut f, chunks[0]);
         })?;
 
@@ -60,8 +49,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             Key::Char('q') => {
                 break;
             }
-            Key::Down | Key::Char('j') => {}
-            Key::Up | Key::Char('k') => {}
+            Key::Down | Key::Char('j') => {
+                cursor_pos = (cursor_pos.0, cursor_pos.1 + 1)
+            }
+            Key::Up | Key::Char('k') => {
+                cursor_pos = (cursor_pos.0, cursor_pos.1 - 1)
+            }
+            Key::Left | Key::Char('h') => {
+                cursor_pos = (cursor_pos.0 - 1, cursor_pos.1)
+            }
+            Key::Right | Key::Char('l') => {
+                cursor_pos = (cursor_pos.0 + 1, cursor_pos.1)
+            }
             _ => {}
         };
     }
