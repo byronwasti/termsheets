@@ -16,7 +16,7 @@ pub struct Item {
 pub struct Spreadsheet<'a> {
     cell_width: u16,
     cell_height: u16,
-    data: Vec<Item>,
+    data: &'a [Item],
     scroll_offset: (usize, usize),
     cursor_pos: (usize, usize),
     block: Option<Block<'a>>,
@@ -27,7 +27,7 @@ impl<'a> Default for Spreadsheet<'a> {
         Self {
             cell_width: 10,
             cell_height: 1,
-            data: Vec::new(),
+            data: &[],
             scroll_offset: (0, 0),
             cursor_pos: (0, 0),
             block: None,
@@ -36,13 +36,7 @@ impl<'a> Default for Spreadsheet<'a> {
 }
 
 impl<'a> Spreadsheet<'a> {
-    pub fn new() -> Self {
-        let mut data = Vec::new();
-        data.push(Item {
-            x: 2,
-            y: 3,
-            data: "Test__A".to_owned(),
-        });
+    pub fn new(data: &'a [Item]) -> Self {
         Self { data, ..Self::default() }
     }
 
@@ -56,35 +50,9 @@ impl<'a> Spreadsheet<'a> {
         self
     }
 
-    pub fn draw_headers_old(&self, area: Rect, buf: &mut Buffer) {
-        for i in 0..(area.height / (self.cell_height + 1)) {
-            let y = area.top() + i*(self.cell_height+1) + 1 + self.cell_height/2;
-            if y >= area.bottom() {
-                continue;
-            }
-            buf.set_stringn(
-                area.left(),
-                y,
-                format!("{}", i+1),
-                3,
-                Style::default(),
-            );
-        }
-
-        for i in 0..(area.width / (self.cell_width + 1)) {
-            let c = (i as u8 + 65) as char;
-            let x = area.left() + i * (self.cell_width+1) + 3 + self.cell_width/2;
-            if x >= area.right() {
-                continue;
-            }
-            buf.set_stringn(
-                x,
-                area.top(),
-                format!("{}", c),
-                3,
-                Style::default(),
-            );
-        }
+    pub fn set_scroll_offset(mut self, scroll_offset: (usize, usize)) -> Spreadsheet<'a> {
+        self.scroll_offset = scroll_offset;
+        self
     }
 
     pub fn draw_headers(&self, area: Rect, buf: &mut Buffer) {
@@ -99,14 +67,14 @@ impl<'a> Spreadsheet<'a> {
             buf.set_stringn(
                 area.left(),
                 y,
-                format!("{}", j+1),
+                format!("{}", j+1 + self.scroll_offset.1 as u16),
                 3,
                 Style::default()
             );
         }
 
         for i in 0..num_horizontal+1 {
-            let c = (i as u8 + 65) as char;
+            let c = ((self.scroll_offset.0 as u16 + i) as u8 + 65) as char;
             let x = 3 + area.left() + (i * (self.cell_width+1)) as u16;
             let x = x + self.cell_width/2;
             if x >= area.right() {
@@ -201,9 +169,17 @@ impl<'a> Spreadsheet<'a> {
     }
 
     pub fn draw_data(&self, area: Rect, buf: &mut Buffer) {
-        for d in &self.data {
-            let x = d.x as u16;
-            let y = d.y as u16;
+        for d in self.data {
+            let x = d.x.checked_sub(self.scroll_offset.0);
+            let y = d.y.checked_sub(self.scroll_offset.1);
+
+            let (x, y) = match (x,y) {
+                (Some(x), Some(y)) => (x as u16, y as u16),
+                _ => {
+                    continue;
+                }
+            };
+
             let data = &d.data;
 
             let cursor_offset = if (x as usize, y as usize) == self.cursor_pos {
@@ -212,9 +188,15 @@ impl<'a> Spreadsheet<'a> {
                 0
             };
 
+            let x = area.left() + x * (self.cell_width + 1) + 1 + cursor_offset;
+            let y = area.top() + y * (self.cell_height + 1) + 1;
+            if x >= area.right() || y >= area.bottom() {
+                continue;
+            }
+
             buf.set_stringn(
-                area.left() + x * (self.cell_width + 1) + 1 + cursor_offset,
-                area.top() + y * (self.cell_height + 1) + 1,
+                x,
+                y,
                 data,
                 self.cell_width as usize - cursor_offset as usize,
                 Style::default(),
@@ -226,7 +208,6 @@ impl<'a> Spreadsheet<'a> {
         buf.get_mut(x, y)
             .set_symbol(">")
             .set_style(Style::default());
-
     }
 }
 

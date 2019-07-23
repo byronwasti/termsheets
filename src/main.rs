@@ -11,6 +11,7 @@ use tui::layout::{Constraint, Direction, Layout};
 use tui::style::{Color, Modifier, Style};
 use tui::widgets::{Block, Borders, List, Row, Table, Text, Widget};
 use tui::Terminal;
+use std::collections::HashMap;
 
 mod cells;
 
@@ -25,8 +26,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let events = Events::new();
 
-    // Input
     let mut cursor_pos = (0, 0);
+    let mut scroll_offset = (0, 0);
+    let mut data = Vec::new();
+    data.push(cells::Item {
+        x: 2,
+        y: 3,
+        data: "Test__A".to_owned(),
+    });
+
     loop {
         terminal.draw(|mut f| {
             let size = f.size();
@@ -38,10 +46,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             Block::default()
                 .borders(Borders::ALL)
+                .title(&format!("{:?}", &scroll_offset))
                 .render(&mut f, chunks[1]);
 
-            cells::Spreadsheet::new()
+            cells::Spreadsheet::new(&data[..])
                 .set_cursor_pos(cursor_pos)
+                .set_scroll_offset(scroll_offset)
                 .render(&mut f, chunks[0]);
         })?;
 
@@ -60,6 +70,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
             Key::Right | Key::Char('l') => {
                 cursor_pos = (cursor_pos.0 + 1, cursor_pos.1)
+            }
+            Key::Char('J') => {
+                scroll_offset = (scroll_offset.0, scroll_offset.1 + 1)
+            }
+            Key::Char('K') => {
+                scroll_offset = (scroll_offset.0, scroll_offset.1 - 1)
+            }
+            Key::Char('H') => {
+                scroll_offset = (scroll_offset.0-1, scroll_offset.1)
+            }
+            Key::Char('L') => {
+                scroll_offset = (scroll_offset.0+1, scroll_offset.1)
             }
             _ => {}
         };
