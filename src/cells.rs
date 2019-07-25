@@ -17,21 +17,27 @@ pub struct Spreadsheet<'a> {
     cell_width: u16,
     cell_height: u16,
     data: &'a [Item],
-    scroll_offset: &'a mut (usize, usize),
+    scroll_offset: (usize, usize),
     cursor_pos: (usize, usize),
     block: Option<Block<'a>>,
 }
 
-impl<'a> Spreadsheet<'a> {
-    pub fn new(data: &'a [Item], scroll_offset: &'a mut (usize, usize)) -> Self {
+impl<'a> Default for Spreadsheet<'a> {
+    fn default() -> Self {
         Self {
-            data,
-            scroll_offset,
             cell_width: 10,
             cell_height: 1,
+            data: &[],
+            scroll_offset: (0, 0),
             cursor_pos: (0, 0),
             block: None,
         }
+    }
+}
+
+impl<'a> Spreadsheet<'a> {
+    pub fn new(data: &'a [Item]) -> Self {
+        Self { data, ..Self::default() }
     }
 
     pub fn block(mut self, block: Block<'a>) -> Spreadsheet<'a> {
@@ -41,6 +47,11 @@ impl<'a> Spreadsheet<'a> {
 
     pub fn set_cursor_pos(mut self, cursor_pos: (usize, usize)) -> Spreadsheet<'a> {
         self.cursor_pos = cursor_pos;
+        self
+    }
+
+    pub fn set_scroll_offset(mut self, scroll_offset: (usize, usize)) -> Spreadsheet<'a> {
+        self.scroll_offset = scroll_offset;
         self
     }
 
@@ -150,7 +161,7 @@ impl<'a> Spreadsheet<'a> {
         }
 
 
-        if self.scroll_offset == &(0, 0) {
+        if self.scroll_offset == (0, 0) {
             buf.get_mut(area.left(), area.top())
                 .set_symbol(line::TOP_LEFT)
                 .set_style(Style::default());

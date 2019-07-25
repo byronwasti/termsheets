@@ -46,10 +46,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             Block::default()
                 .borders(Borders::ALL)
+                .title(&format!("{:?}", &scroll_offset))
                 .render(&mut f, chunks[1]);
 
-            cells::Spreadsheet::new(&data[..], &mut scroll_offset)
+            cells::Spreadsheet::new(&data[..])
                 .set_cursor_pos(cursor_pos)
+                .set_scroll_offset(scroll_offset)
                 .render(&mut f, chunks[0]);
         })?;
 
