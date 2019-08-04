@@ -11,9 +11,10 @@ use tui::layout::{Constraint, Direction, Layout};
 use tui::style::{Color, Modifier, Style};
 use tui::widgets::{Block, Borders, List, Row, Table, Text, Widget};
 use tui::Terminal;
-use std::collections::HashMap;
 
 mod cells;
+mod data;
+mod viewer;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Terminal initialization
@@ -29,7 +30,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut cursor_pos = (0, 0);
     let mut scroll_offset = (0, 0);
     let mut data = Vec::new();
-    data.push(cells::Item {
+    data.push(data::Item {
         x: 2,
         y: 3,
         data: "Test__A".to_owned(),
@@ -37,6 +38,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     loop {
         terminal.draw(|mut f| {
+            // Figure out Layout
             let size = f.size();
             let chunks = Layout::default()
                 .margin(0)
@@ -44,15 +46,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .constraints([Constraint::Percentage(70), Constraint::Percentage(30)].as_ref())
                 .split(f.size());
 
+            // Calculate offsets + etc.
+
+            // Render Components
             Block::default()
                 .borders(Borders::ALL)
                 .title(&format!("{:?}", &scroll_offset))
                 .render(&mut f, chunks[1]);
-
+            
+            viewer::SpreadsheetWidget::new(&[])
+                .set_cell_widths(&[5, 10, 10], &["123456", "1234567890", "A"])
+                .set_cell_heights(&[1, 3], &["1", "2"])
+                .set_top_left((0, 0))
+                .render(&mut f, chunks[0]);
+            /*
             cells::Spreadsheet::new(&data[..])
                 .set_cursor_pos(cursor_pos)
-                .set_scroll_offset(scroll_offset)
+                .set_scroll_offset(&mut scroll_offset)
                 .render(&mut f, chunks[0]);
+                */
         })?;
 
         match events.next()? {
