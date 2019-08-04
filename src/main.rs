@@ -15,6 +15,7 @@ use tui::Terminal;
 mod cells;
 mod data;
 mod viewer;
+mod planner;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Terminal initialization
@@ -27,18 +28,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let events = Events::new();
 
-    let mut cursor_pos = (0, 0);
-    let mut scroll_offset = (0, 0);
-    let mut data = Vec::new();
-    data.push(data::Item {
-        x: 2,
-        y: 3,
-        data: "Test__A".to_owned(),
-    });
+    let mut planner = planner::Planner::new();
 
     loop {
         terminal.draw(|mut f| {
-            // Figure out Layout
             let size = f.size();
             let chunks = Layout::default()
                 .margin(0)
@@ -46,25 +39,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .constraints([Constraint::Percentage(70), Constraint::Percentage(30)].as_ref())
                 .split(f.size());
 
-            // Calculate offsets + etc.
-
-            // Render Components
             Block::default()
                 .borders(Borders::ALL)
-                .title(&format!("{:?}", &scroll_offset))
                 .render(&mut f, chunks[1]);
             
+            let area = chunks[0];
+            planner.set_area(area);
+            let widths = planner.get_widths();
+            let heights = planner.get_heights();
+            let (w_labels, h_labels) = planner.get_labels();
+
             viewer::SpreadsheetWidget::new(&[])
-                .set_cell_widths(&[5, 10, 10], &["123456", "1234567890", "A"])
-                .set_cell_heights(&[1, 3], &["1", "2"])
+                .set_cell_widths(&widths, &w_labels)
+                .set_cell_heights(&heights, &h_labels)
                 .set_top_left((0, 0))
                 .render(&mut f, chunks[0]);
-            /*
-            cells::Spreadsheet::new(&data[..])
-                .set_cursor_pos(cursor_pos)
-                .set_scroll_offset(&mut scroll_offset)
-                .render(&mut f, chunks[0]);
-                */
         })?;
 
         match events.next()? {
@@ -72,28 +61,28 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 break;
             }
             Key::Down | Key::Char('j') => {
-                cursor_pos = (cursor_pos.0, cursor_pos.1 + 1)
+                //cursor_pos = (cursor_pos.0, cursor_pos.1 + 1)
             }
             Key::Up | Key::Char('k') => {
-                cursor_pos = (cursor_pos.0, cursor_pos.1 - 1)
+                //cursor_pos = (cursor_pos.0, cursor_pos.1 - 1)
             }
             Key::Left | Key::Char('h') => {
-                cursor_pos = (cursor_pos.0 - 1, cursor_pos.1)
+                //cursor_pos = (cursor_pos.0 - 1, cursor_pos.1)
             }
             Key::Right | Key::Char('l') => {
-                cursor_pos = (cursor_pos.0 + 1, cursor_pos.1)
+                //cursor_pos = (cursor_pos.0 + 1, cursor_pos.1)
             }
             Key::Char('J') => {
-                scroll_offset = (scroll_offset.0, scroll_offset.1 + 1)
+                //scroll_offset = (scroll_offset.0, scroll_offset.1 + 1)
             }
             Key::Char('K') => {
-                scroll_offset = (scroll_offset.0, scroll_offset.1 - 1)
+                //scroll_offset = (scroll_offset.0, scroll_offset.1 - 1)
             }
             Key::Char('H') => {
-                scroll_offset = (scroll_offset.0-1, scroll_offset.1)
+                //scroll_offset = (scroll_offset.0 - 1, scroll_offset.1)
             }
             Key::Char('L') => {
-                scroll_offset = (scroll_offset.0+1, scroll_offset.1)
+                //scroll_offset = (scroll_offset.0 + 1, scroll_offset.1)
             }
             _ => {}
         };
