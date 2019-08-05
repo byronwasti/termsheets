@@ -15,7 +15,7 @@ use tui::Terminal;
 mod cells;
 mod data;
 mod viewer;
-mod planner;
+mod compositor;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Terminal initialization
@@ -28,7 +28,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let events = Events::new();
 
-    let mut planner = planner::Planner::new();
+    let mut compositor = compositor::Compositor::new();
 
     loop {
         terminal.draw(|mut f| {
@@ -40,12 +40,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .split(f.size());
 
             
-            planner.set_area(chunks[0]);
-            let widths = planner.get_widths();
-            let heights = planner.get_heights();
-            let (w_labels, h_labels) = planner.get_labels();
-            let cursor_pos = planner.get_cursor();
-            let top_left = planner.get_top_left();
+            compositor.set_area(chunks[0]);
+            let widths = compositor.get_widths();
+            let heights = compositor.get_heights();
+            let (w_labels, h_labels) = compositor.get_labels();
+            let cursor_pos = compositor.get_cursor();
+            let top_left = compositor.get_top_left();
 
             Block::default()
                 .borders(Borders::ALL)
@@ -65,28 +65,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 break;
             }
             Key::Down | Key::Char('j') => {
-                planner.move_cursor((0, 1));
+                compositor.move_cursor((0, 1));
             }
             Key::Up | Key::Char('k') => {
-                planner.move_cursor((0, -1));
+                compositor.move_cursor((0, -1));
             }
             Key::Left | Key::Char('h') => {
-                planner.move_cursor(( -1, 0));
+                compositor.move_cursor(( -1, 0));
             }
             Key::Right | Key::Char('l') => {
-                planner.move_cursor((1, 0));
-            }
-            Key::Char('J') => {
-                //scroll_offset = (scroll_offset.0, scroll_offset.1 + 1)
-            }
-            Key::Char('K') => {
-                //scroll_offset = (scroll_offset.0, scroll_offset.1 - 1)
-            }
-            Key::Char('H') => {
-                //scroll_offset = (scroll_offset.0 - 1, scroll_offset.1)
-            }
-            Key::Char('L') => {
-                //scroll_offset = (scroll_offset.0 + 1, scroll_offset.1)
+                compositor.move_cursor((1, 0));
             }
             _ => {}
         };

@@ -2,8 +2,7 @@ use tui::layout::Rect;
 
 use crate::viewer::HEIGHT_LABEL_MARGIN;
 
-// TODO: Composer, not planner
-pub struct Planner {
+pub struct Compositor {
     scroll_offset: (usize, usize),
     cursor_pos: (usize, usize),
     default_width: u16,
@@ -11,7 +10,7 @@ pub struct Planner {
     area: Option<Rect>,
 }
 
-impl Default for Planner {
+impl Default for Compositor {
     fn default() -> Self {
         Self {
             scroll_offset: (0, 0),
@@ -23,7 +22,7 @@ impl Default for Planner {
     }
 }
 
-impl Planner {
+impl Compositor {
     pub fn new() -> Self {
         Self::default()
     }
