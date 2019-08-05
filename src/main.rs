@@ -12,7 +12,6 @@ use tui::style::{Color, Modifier, Style};
 use tui::widgets::{Block, Borders, List, Row, Table, Text, Widget};
 use tui::Terminal;
 
-mod cells;
 mod data;
 mod viewer;
 mod compositor;
