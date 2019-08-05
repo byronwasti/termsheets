@@ -18,7 +18,7 @@ pub struct SpreadsheetWidget<'a> {
     height_labels: &'a [String],
     data: &'a [Item],
     top_left: (usize, usize),
-    cursor_pos: (u16, u16),
+    cursor_pos: (usize, usize),
 }
 
 impl<'a> Default for SpreadsheetWidget<'a> {
@@ -43,7 +43,7 @@ impl<'a> SpreadsheetWidget<'a> {
         }
     }
 
-    pub fn set_cursor_pos(mut self, cursor_pos: (u16, u16)) -> SpreadsheetWidget<'a> {
+    pub fn set_cursor_pos(mut self, cursor_pos: (usize, usize)) -> SpreadsheetWidget<'a> {
         self.cursor_pos = cursor_pos;
         self
     }
@@ -182,6 +182,15 @@ impl<'a> SpreadsheetWidget<'a> {
                 .set_symbol(line::TOP_LEFT);
         }
 
+
+        let x = area.left() + self.cell_widths[0..self.cursor_pos.0].iter()
+            .map(|x| x + 1)
+            .sum::<u16>() + 1;
+        let y = area.top() + self.cell_heights[0..self.cursor_pos.1].iter()
+            .map(|y| y + 1)
+            .sum::<u16>() + 1;
+        buf.get_mut(x, y)
+            .set_symbol(">");
     }
 }
 

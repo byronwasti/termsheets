@@ -54,9 +54,54 @@ impl Planner {
         return (width_labels, height_labels)
     }
 
+    pub fn get_top_left(&self) -> (usize, usize) {
+        self.scroll_offset
+    }
+
+    pub fn get_cursor(&self) -> (usize, usize) {
+        self.cursor_pos
+    }
+
+    pub fn move_cursor(&mut self, (x, y): (i32, i32)) {
+        let cur_x = self.cursor_pos.0 as i32;
+        let cur_y = self.cursor_pos.1 as i32;
+        let mut x = cur_x + x;
+        let mut y = cur_y + y;
+        if x < 0 {
+            if self.scroll_offset.0 > 0 {
+                self.scroll_offset.0 -= 1;
+            }
+            x = 0;
+        }
+        if y < 0 {
+            if self.scroll_offset.1 > 0 {
+                self.scroll_offset.1 -= 1;
+            }
+            y = 0;
+        }
+
+        let mut x = x as usize;
+        let mut y = y as usize;
+
+        let n_wide = self.get_n_wide() - 1;
+        let n_high = self.get_n_high() - 1;
+
+        if x >= n_wide {
+            self.scroll_offset.0 += 1;
+            x = x - 1;
+        }
+
+        if y >= n_high {
+            self.scroll_offset.1 += 1;
+            y = y - 1;
+        }
+
+        self.cursor_pos = (x, y);
+    }
+
     fn get_n_wide(&self) -> usize {
         if let Some(area) = self.area {
-            ((area.width - HEIGHT_LABEL_MARGIN) / self.default_width + 1) as usize
+            ((area.width - HEIGHT_LABEL_MARGIN) / (self.default_width + 1)) as usize
         } else {
             0
         }
@@ -64,7 +109,7 @@ impl Planner {
 
     fn get_n_high(&self) -> usize {
         if let Some(area) = self.area {
-            ((area.height - 1) / self.default_height + 1) as usize
+            ((area.height - 1) / (self.default_height + 1)) as usize
         } else { 
             0
         }

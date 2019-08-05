@@ -39,20 +39,24 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .constraints([Constraint::Percentage(70), Constraint::Percentage(30)].as_ref())
                 .split(f.size());
 
-            Block::default()
-                .borders(Borders::ALL)
-                .render(&mut f, chunks[1]);
             
-            let area = chunks[0];
-            planner.set_area(area);
+            planner.set_area(chunks[0]);
             let widths = planner.get_widths();
             let heights = planner.get_heights();
             let (w_labels, h_labels) = planner.get_labels();
+            let cursor_pos = planner.get_cursor();
+            let top_left = planner.get_top_left();
+
+            Block::default()
+                .borders(Borders::ALL)
+                .title(&format!("{}, {}", widths.len(), heights.len()))
+                .render(&mut f, chunks[1]);
 
             viewer::SpreadsheetWidget::new(&[])
                 .set_cell_widths(&widths, &w_labels)
                 .set_cell_heights(&heights, &h_labels)
-                .set_top_left((0, 0))
+                .set_cursor_pos(cursor_pos)
+                .set_top_left(top_left)
                 .render(&mut f, chunks[0]);
         })?;
 
@@ -61,16 +65,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 break;
             }
             Key::Down | Key::Char('j') => {
-                //cursor_pos = (cursor_pos.0, cursor_pos.1 + 1)
+                planner.move_cursor((0, 1));
             }
             Key::Up | Key::Char('k') => {
-                //cursor_pos = (cursor_pos.0, cursor_pos.1 - 1)
+                planner.move_cursor((0, -1));
             }
             Key::Left | Key::Char('h') => {
-                //cursor_pos = (cursor_pos.0 - 1, cursor_pos.1)
+                planner.move_cursor(( -1, 0));
             }
             Key::Right | Key::Char('l') => {
-                //cursor_pos = (cursor_pos.0 + 1, cursor_pos.1)
+                planner.move_cursor((1, 0));
             }
             Key::Char('J') => {
                 //scroll_offset = (scroll_offset.0, scroll_offset.1 + 1)
