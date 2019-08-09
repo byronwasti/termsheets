@@ -2,13 +2,13 @@ use tui::buffer::Buffer;
 use tui::layout::Rect;
 use tui::style::Style;
 use tui::symbols::line;
-use tui::widgets::{Widget};
+use tui::widgets::Widget;
 
 pub const HEIGHT_LABEL_MARGIN: u16 = 3;
 
 pub struct Item {
-    position: (u16, u16),
-    data: String,
+    pub position: (u16, u16),
+    pub data: String,
 }
 
 pub struct SpreadsheetWidget<'a> {
@@ -48,13 +48,21 @@ impl<'a> SpreadsheetWidget<'a> {
         self
     }
 
-    pub fn set_cell_widths(mut self, cell_widths: &'a [u16], labels: &'a [String]) -> SpreadsheetWidget<'a> {
+    pub fn set_cell_widths(
+        mut self,
+        cell_widths: &'a [u16],
+        labels: &'a [String],
+    ) -> SpreadsheetWidget<'a> {
         self.cell_widths = cell_widths;
         self.width_labels = labels;
         self
     }
 
-    pub fn set_cell_heights(mut self, cell_heights: &'a [u16], labels: &'a [String]) -> SpreadsheetWidget<'a> {
+    pub fn set_cell_heights(
+        mut self,
+        cell_heights: &'a [u16],
+        labels: &'a [String],
+    ) -> SpreadsheetWidget<'a> {
         self.cell_heights = cell_heights;
         self.height_labels = labels;
         self
@@ -68,24 +76,18 @@ impl<'a> SpreadsheetWidget<'a> {
     fn draw_headers(&self, area: Rect, buf: &mut Buffer) {
         let mut offset = HEIGHT_LABEL_MARGIN + 1;
         for (width, label) in self.cell_widths.iter().zip(self.width_labels) {
-            let x = offset + (width.saturating_sub(label.len() as u16)/2 );
+            let x = offset + (width.saturating_sub(label.len() as u16) / 2);
             if x >= area.right() {
                 break;
             }
-            
+
             offset += width + 1;
-            buf.set_stringn(
-                x,
-                area.top(),
-                label,
-                *width as usize,
-                Style::default(),
-            );
+            buf.set_stringn(x, area.top(), label, *width as usize, Style::default());
         }
 
         let mut offset = 2;
         for (height, label) in self.cell_heights.iter().zip(self.height_labels) {
-            let y = offset + (height/2);
+            let y = offset + (height / 2);
             if y >= area.bottom() {
                 break;
             }
@@ -112,7 +114,8 @@ impl<'a> SpreadsheetWidget<'a> {
             }
             offset += width + 1;
             for y in area.top()..area.bottom() {
-                buf.get_mut(x,y).set_symbol(line::VERTICAL)
+                buf.get_mut(x, y)
+                    .set_symbol(line::VERTICAL)
                     .set_style(Style::default());
             }
         }
@@ -126,7 +129,8 @@ impl<'a> SpreadsheetWidget<'a> {
             }
             offset += height + 1;
             for x in area.left()..area.right() {
-                buf.get_mut(x,y).set_symbol(line::HORIZONTAL)
+                buf.get_mut(x, y)
+                    .set_symbol(line::HORIZONTAL)
                     .set_style(Style::default());
             }
         }
@@ -176,21 +180,49 @@ impl<'a> SpreadsheetWidget<'a> {
             }
         }
 
-
         if self.top_left == (0, 0) {
             buf.get_mut(area.left(), area.top())
                 .set_symbol(line::TOP_LEFT);
         }
 
 
-        let x = area.left() + self.cell_widths[0..self.cursor_pos.0].iter()
-            .map(|x| x + 1)
-            .sum::<u16>() + 1;
-        let y = area.top() + self.cell_heights[0..self.cursor_pos.1].iter()
-            .map(|y| y + 1)
-            .sum::<u16>() + 1;
-        buf.get_mut(x, y)
-            .set_symbol(">");
+        // Draw Data
+        for Item {position: (x, y), data: v} in self.data {
+            let x1 = x;
+            let x = area.left()
+                + self.cell_widths[0..*x as usize]
+                    .iter()
+                    .map(|x| x + 1)
+                    .sum::<u16>()
+                + 1;
+            let y = area.top()
+                + self.cell_heights[0..*y as usize]
+                    .iter()
+                    .map(|y| y + 1)
+                    .sum::<u16>()
+                + 1;
+            buf.set_stringn(x, y,
+                            v,
+                            self.cell_widths[*x1 as usize] as usize,
+                            Style::default()
+                )
+        }
+
+
+        // Draw Cursor
+        let x = area.left()
+            + self.cell_widths[0..self.cursor_pos.0]
+                .iter()
+                .map(|x| x + 1)
+                .sum::<u16>()
+            + 1;
+        let y = area.top()
+            + self.cell_heights[0..self.cursor_pos.1]
+                .iter()
+                .map(|y| y + 1)
+                .sum::<u16>()
+            + 1;
+        buf.get_mut(x, y).set_symbol(">");
     }
 }
 

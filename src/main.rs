@@ -12,9 +12,10 @@ use tui::style::{Color, Modifier, Style};
 use tui::widgets::{Block, Borders, List, Row, Table, Text, Widget};
 use tui::Terminal;
 
+mod compositor;
 mod data;
 mod viewer;
-mod compositor;
+mod state;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Terminal initialization
@@ -28,8 +29,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let events = Events::new();
 
     let mut compositor = compositor::Compositor::new();
+    let mut data = data::Data::new();
+    let mut state = state::State::new();
 
     loop {
+        let state_info = state.get_info();
+        if state_info.exit {
+            break;
+        }
+
         terminal.draw(|mut f| {
             let size = f.size();
             let chunks = Layout::default()
@@ -38,20 +46,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .constraints([Constraint::Percentage(70), Constraint::Percentage(30)].as_ref())
                 .split(f.size());
 
-            
+            Block::default()
+                .borders(Borders::ALL)
+                .render(&mut f, chunks[1]);
+
             compositor.set_area(chunks[0]);
+            compositor.set_state(state_info);
+            compositor.set_data(&data);
+
             let widths = compositor.get_widths();
             let heights = compositor.get_heights();
             let (w_labels, h_labels) = compositor.get_labels();
             let cursor_pos = compositor.get_cursor();
             let top_left = compositor.get_top_left();
+            let drawable_data = compositor.get_drawable();
 
-            Block::default()
-                .borders(Borders::ALL)
-                .title(&format!("{}, {}", widths.len(), heights.len()))
-                .render(&mut f, chunks[1]);
-
-            viewer::SpreadsheetWidget::new(&[])
+            viewer::SpreadsheetWidget::new(&drawable_data[..])
                 .set_cell_widths(&widths, &w_labels)
                 .set_cell_heights(&heights, &h_labels)
                 .set_cursor_pos(cursor_pos)
@@ -59,24 +69,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .render(&mut f, chunks[0]);
         })?;
 
-        match events.next()? {
-            Key::Char('q') => {
-                break;
-            }
-            Key::Down | Key::Char('j') => {
-                compositor.move_cursor((0, 1));
-            }
-            Key::Up | Key::Char('k') => {
-                compositor.move_cursor((0, -1));
-            }
-            Key::Left | Key::Char('h') => {
-                compositor.move_cursor(( -1, 0));
-            }
-            Key::Right | Key::Char('l') => {
-                compositor.move_cursor((1, 0));
-            }
-            _ => {}
-        };
+        state.handle_event(events.next()?);
+        state.update_data(&mut data);
     }
 
     Ok(())
