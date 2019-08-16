@@ -1,5 +1,6 @@
 use std::ops::{Add, Sub};
 
+#[derive(Debug, PartialEq, Eq, Hash, Copy, Clone)]
 pub struct CellPos {
     pub x: usize,
     pub y: usize,
@@ -8,6 +9,21 @@ pub struct CellPos {
 impl CellPos {
     pub fn new(x: usize, y: usize) -> Self {
         Self { x, y }
+    }
+
+    pub fn offset(&self, other: &CellPos) -> (i32, i32) {
+        let x = other.x as i32 - self.x as i32;
+        let y = other.y as i32 - self.y as i32;
+        (x, y)
+    }
+}
+
+impl Default for CellPos {
+    fn default() -> CellPos {
+        CellPos {
+            x: 0,
+            y: 0,
+        }
     }
 }
 

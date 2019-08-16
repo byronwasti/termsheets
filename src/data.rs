@@ -2,13 +2,12 @@ use crate::parse::{parse, Operation};
 use crate::viewer::Item;
 use log::debug;
 use std::collections::HashMap;
-
-type Coord = (usize, usize);
+use crate::position::CellPos;
 
 pub struct Data {
-    cell_data: HashMap<Coord, String>,
-    calculated: HashMap<Coord, String>,
-    dag: HashMap<Coord, Vec<Coord>>,
+    cell_data: HashMap<CellPos, String>,
+    calculated: HashMap<CellPos, String>,
+    dag: HashMap<CellPos, Vec<CellPos>>,
 }
 
 impl Default for Data {
@@ -26,10 +25,12 @@ impl Data {
         Self::default()
     }
 
-    pub fn insert(&mut self, location: (usize, usize), value: String) {
+    pub fn insert(&mut self, location: CellPos, value: String) {
         if value.starts_with("=") {
             if let Ok((c1, c2, op)) = parse(&value) {
                 debug!("{:?} {:?} {:?}", &c1, &op, &c2);
+                let c1 = CellPos::new(c1.0, c1.1);
+                let c2 = CellPos::new(c2.0, c2.1);
                 let c1 = self.get(c1);
                 let c2 = self.get(c2);
 
@@ -56,7 +57,7 @@ impl Data {
         self.cell_data.insert(location, value);
     }
 
-    pub fn get(&self, location: (usize, usize)) -> Option<&String> {
+    pub fn get(&self, location: CellPos) -> Option<&String> {
         let val = self.calculated.get(&location);
         if val.is_some() {
             val

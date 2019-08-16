@@ -1,8 +1,9 @@
 use crate::data::Data;
+use crate::position::CellPos;
 use termion::event::Key;
 
 pub struct StateInfo {
-    pub cursor_pos: (usize, usize),
+    pub cursor_pos: CellPos,
     pub mode: String,
     pub exit: bool,
     pub buffer: String,
@@ -10,16 +11,16 @@ pub struct StateInfo {
 
 pub struct State {
     val: StateVal,
-    cursor_pos: (usize, usize),
+    cursor_pos: CellPos,
     buffer: String,
-    data_updates: Vec<((usize, usize), String)>,
+    data_updates: Vec<(CellPos, String)>,
 }
 
 impl State {
     pub fn new() -> Self {
         Self {
             val: StateVal::Normal,
-            cursor_pos: (0, 0),
+            cursor_pos: CellPos::default(),
             buffer: String::new(),
             data_updates: Vec::new(),
         }
@@ -52,16 +53,16 @@ impl State {
         match key {
             Key::Char('q') => self.val = StateVal::Exit,
             Key::Down | Key::Char('j') => {
-                self.move_cursor((0, 1));
+                self.move_cursor_down();
             }
             Key::Up | Key::Char('k') => {
-                self.move_cursor((0, -1));
+                self.move_cursor_up();
             }
             Key::Left | Key::Char('h') => {
-                self.move_cursor((-1, 0));
+                self.move_cursor_left();
             }
             Key::Right | Key::Char('l') => {
-                self.move_cursor((1, 0));
+                self.move_cursor_right();
             }
             Key::Char('\n') | Key::Char('i') => {
                 self.buffer = String::new();
@@ -75,7 +76,7 @@ impl State {
         match key {
             Key::Char('\n') => {
                 self.data_updates
-                    .push((self.cursor_pos.clone(), self.buffer.clone()));
+                    .push((self.cursor_pos, self.buffer.clone()));
                 self.val = StateVal::Normal;
             }
             Key::Char(x) => {
@@ -91,19 +92,20 @@ impl State {
         }
     }
 
-    fn move_cursor(&mut self, (x, y): (i32, i32)) {
-        let cur_x = self.cursor_pos.0 as i32;
-        let cur_y = self.cursor_pos.1 as i32;
-        let mut x = cur_x + x;
-        let mut y = cur_y + y;
-        if x < 0 {
-            x = 0;
-        }
-        if y < 0 {
-            y = 0;
-        }
+    fn move_cursor_down(&mut self) {
+        self.cursor_pos.y += 1;
+    }
 
-        self.cursor_pos = (x as usize, y as usize);
+    fn move_cursor_up(&mut self) {
+        self.cursor_pos.y = self.cursor_pos.y.saturating_sub(1);
+    }
+
+    fn move_cursor_left(&mut self) {
+        self.cursor_pos.x = self.cursor_pos.x.saturating_sub(1);
+    }
+
+    fn move_cursor_right(&mut self) {
+        self.cursor_pos.x += 1;
     }
 }
 
