@@ -12,6 +12,7 @@ pub struct Compositor {
     default_height: u16,
     area: Option<Rect>,
     drawable_data: Vec<((usize, usize), String)>,
+    buffer: Option<String>,
 }
 
 impl Default for Compositor {
@@ -23,6 +24,7 @@ impl Default for Compositor {
             default_width: 10,
             default_height: 1,
             drawable_data: Vec::new(),
+            buffer: None,
             area: None,
         }
     }
@@ -47,6 +49,8 @@ impl Compositor {
         let move_x = global_pos_x - cur_pos_x;
         let move_y = global_pos_y - cur_pos_y;
         self.move_cursor((move_x, move_y));
+
+        self.buffer = Some(state.buffer.to_owned());
     }
 
     pub fn set_data(&mut self, data: &Data) {

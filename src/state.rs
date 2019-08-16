@@ -5,6 +5,7 @@ pub struct StateInfo {
     pub cursor_pos: (usize, usize),
     pub mode: String,
     pub exit: bool,
+    pub buffer: String,
 }
 
 pub struct State {
@@ -29,6 +30,7 @@ impl State {
             cursor_pos: self.cursor_pos,
             mode: "Normal".to_string(),
             exit: self.val == StateVal::Exit,
+            buffer: self.buffer.clone(),
         }
     }
 

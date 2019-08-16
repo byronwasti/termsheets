@@ -1,6 +1,6 @@
 use tui::buffer::Buffer;
 use tui::layout::Rect;
-use tui::style::Style;
+use tui::style::{Style, Modifier, Color};
 use tui::symbols::line;
 use tui::widgets::Widget;
 
@@ -222,7 +222,12 @@ impl<'a> SpreadsheetWidget<'a> {
                 .map(|y| y + 1)
                 .sum::<u16>()
             + 1;
-        buf.get_mut(x, y).set_symbol(">");
+        buf.get_mut(x, y)
+            .set_symbol(">")
+            .set_style(
+                Style::default()
+                    .fg(Color::LightGreen)
+                    );
     }
 }
 

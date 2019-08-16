@@ -16,8 +16,11 @@ mod compositor;
 mod data;
 mod viewer;
 mod state;
+mod parse;
+mod logger;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+
     // Terminal initialization
     let stdout = io::stdout().into_raw_mode()?;
     let stdout = MouseTerminal::from(stdout);
@@ -25,6 +28,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let backend = TermionBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
     terminal.hide_cursor()?;
+    logger::init();
 
     let events = Events::new();
 
@@ -76,8 +80,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-/// A small event handler that wrap termion input and tick events. Each event
-/// type is handled in its own thread and returned to a common `Receiver`
+
 pub struct Events {
     rx: mpsc::Receiver<Key>,
 }
