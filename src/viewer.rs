@@ -17,8 +17,7 @@ pub struct SpreadsheetWidget<'a> {
     width_labels: &'a [String],
     height_labels: &'a [String],
     data: &'a [Item],
-    top_left: (usize, usize),
-    cursor_pos: (usize, usize),
+    top_left: (bool, bool),
 }
 
 impl<'a> Default for SpreadsheetWidget<'a> {
@@ -29,8 +28,7 @@ impl<'a> Default for SpreadsheetWidget<'a> {
             width_labels: &[],
             height_labels: &[],
             data: &[],
-            top_left: (0, 0),
-            cursor_pos: (0, 0),
+            top_left: (true, true),
         }
     }
 }
@@ -43,10 +41,6 @@ impl<'a> SpreadsheetWidget<'a> {
         }
     }
 
-    pub fn set_cursor_pos(mut self, cursor_pos: (usize, usize)) -> SpreadsheetWidget<'a> {
-        self.cursor_pos = cursor_pos;
-        self
-    }
 
     pub fn set_cell_widths(
         mut self,
@@ -68,7 +62,7 @@ impl<'a> SpreadsheetWidget<'a> {
         self
     }
 
-    pub fn set_top_left(mut self, top_left: (usize, usize)) -> SpreadsheetWidget<'a> {
+    pub fn set_top_left(mut self, top_left: (bool, bool)) -> SpreadsheetWidget<'a> {
         self.top_left = top_left;
         self
     }
@@ -152,39 +146,63 @@ impl<'a> SpreadsheetWidget<'a> {
         }
 
         // Fix top if needed
-        if self.top_left.0 == 0 {
-            let mut offset = 0;
-            for height in self.cell_heights {
-                let y = area.top() + offset;
-                if y >= area.bottom() {
-                    break;
+        match self.top_left {
+            (true, true) => {
+                let mut offset = 0;
+                for width in self.cell_widths {
+                    let x = area.left() + offset;
+                    if x >= area.right() {
+                        break;
+                    }
+                    offset += width + 1;
+                    buf.get_mut(x, area.top())
+                        .set_symbol(line::HORIZONTAL_DOWN)
+                        .set_style(Style::default());
                 }
-                offset += height + 1;
-                buf.get_mut(area.left(), y)
-                    .set_symbol(line::VERTICAL_RIGHT)
-                    .set_style(Style::default());
-            }
-        }
 
-        if self.top_left.1 == 0 {
-            let mut offset = 0;
-            for width in self.cell_widths {
-                let x = area.left() + offset;
-                if x >= area.right() {
-                    break;
+                let mut offset = 0;
+                for height in self.cell_heights {
+                    let y = area.top() + offset;
+                    if y >= area.bottom() {
+                        break;
+                    }
+                    offset += height + 1;
+                    buf.get_mut(area.left(), y)
+                        .set_symbol(line::VERTICAL_RIGHT)
+                        .set_style(Style::default());
                 }
-                offset += width + 1;
-                buf.get_mut(x, area.top())
-                    .set_symbol(line::HORIZONTAL_DOWN)
-                    .set_style(Style::default());
+
+                buf.get_mut(area.left(), area.top())
+                    .set_symbol(line::TOP_LEFT);
             }
+            (true, _) => {
+                let mut offset = 0;
+                for height in self.cell_heights {
+                    let y = area.top() + offset;
+                    if y >= area.bottom() {
+                        break;
+                    }
+                    offset += height + 1;
+                    buf.get_mut(area.left(), y)
+                        .set_symbol(line::VERTICAL_RIGHT)
+                        .set_style(Style::default());
+                }
+            }
+            (_, true) => {
+                let mut offset = 0;
+                for width in self.cell_widths {
+                    let x = area.left() + offset;
+                    if x >= area.right() {
+                        break;
+                    }
+                    offset += width + 1;
+                    buf.get_mut(x, area.top())
+                        .set_symbol(line::HORIZONTAL_DOWN)
+                        .set_style(Style::default());
+                }
+            }
+            _ => {}
         }
-
-        if self.top_left == (0, 0) {
-            buf.get_mut(area.left(), area.top())
-                .set_symbol(line::TOP_LEFT);
-        }
-
 
         // Draw Data
         for Item {position: (x, y), data: v} in self.data {
@@ -207,27 +225,6 @@ impl<'a> SpreadsheetWidget<'a> {
                             Style::default()
                 )
         }
-
-
-        // Draw Cursor
-        let x = area.left()
-            + self.cell_widths[0..self.cursor_pos.0]
-                .iter()
-                .map(|x| x + 1)
-                .sum::<u16>()
-            + 1;
-        let y = area.top()
-            + self.cell_heights[0..self.cursor_pos.1]
-                .iter()
-                .map(|y| y + 1)
-                .sum::<u16>()
-            + 1;
-        buf.get_mut(x, y)
-            .set_symbol(">")
-            .set_style(
-                Style::default()
-                    .fg(Color::LightGreen)
-                    );
     }
 }
 

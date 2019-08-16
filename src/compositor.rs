@@ -3,6 +3,7 @@ use tui::layout::Rect;
 use crate::viewer::{HEIGHT_LABEL_MARGIN, Item};
 use crate::state::StateInfo;
 use crate::data::Data;
+use log::debug;
 
 pub struct Compositor {
     scroll_offset: (usize, usize),
@@ -89,8 +90,8 @@ impl Compositor {
         return (width_labels, height_labels);
     }
 
-    pub fn get_top_left(&self) -> (usize, usize) {
-        self.scroll_offset
+    pub fn get_top_left(&self) -> (bool, bool) {
+        (self.scroll_offset.0 == 0, self.scroll_offset.1 == 0)
     }
 
     pub fn get_cursor(&self) -> (usize, usize) {
@@ -99,8 +100,17 @@ impl Compositor {
 
     pub fn get_drawable(&mut self) -> Vec<Item> {
         let scroll_offset = self.scroll_offset;
-        self.drawable_data.drain(..)
+        let cursor_pos = self.real_cursor_pos;
+        let mut draw_cursor = true;
+
+        let mut items: Vec<Item> = self.drawable_data.drain(..)
             .map(|((x, y), v)| {
+                let v = if (x, y) == cursor_pos {
+                    draw_cursor = false;
+                    let mut tmp = "> ".to_string();
+                    tmp.push_str(&v);
+                    tmp
+                } else { v };
                 let x = x as i32;
                 let x = x - scroll_offset.0 as i32;
                 let y = y as i32;
@@ -110,7 +120,21 @@ impl Compositor {
                     data: v,
                 }
             })
-            .collect()
+            .collect();
+
+        if draw_cursor {
+            let (x, y) = cursor_pos;
+            let x = x as i32;
+            let x = x - scroll_offset.0 as i32;
+            let y = y as i32;
+            let y = y - scroll_offset.1 as i32;
+            items.push(Item {
+                position: (x as u16, y as u16),
+                data: ">".to_string(),
+            });
+        }
+
+        return items;
     }
 
     fn move_cursor(&mut self, (x, y): (i32, i32)) {

@@ -20,7 +20,6 @@ mod parse;
 mod logger;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-
     // Terminal initialization
     let stdout = io::stdout().into_raw_mode()?;
     let stdout = MouseTerminal::from(stdout);
@@ -61,14 +60,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             let widths = compositor.get_widths();
             let heights = compositor.get_heights();
             let (w_labels, h_labels) = compositor.get_labels();
-            let cursor_pos = compositor.get_cursor();
             let top_left = compositor.get_top_left();
             let drawable_data = compositor.get_drawable();
 
             viewer::SpreadsheetWidget::new(&drawable_data[..])
                 .set_cell_widths(&widths, &w_labels)
                 .set_cell_heights(&heights, &h_labels)
-                .set_cursor_pos(cursor_pos)
                 .set_top_left(top_left)
                 .render(&mut f, chunks[0]);
         })?;
