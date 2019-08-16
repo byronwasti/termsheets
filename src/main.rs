@@ -14,10 +14,11 @@ use tui::Terminal;
 
 mod compositor;
 mod data;
-mod viewer;
-mod state;
-mod parse;
 mod logger;
+mod parse;
+mod position;
+mod state;
+mod viewer;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Terminal initialization
@@ -76,7 +77,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
-
 
 pub struct Events {
     rx: mpsc::Receiver<Key>,

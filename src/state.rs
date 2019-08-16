@@ -1,5 +1,5 @@
-use termion::event::Key;
 use crate::data::Data;
+use termion::event::Key;
 
 pub struct StateInfo {
     pub cursor_pos: (usize, usize),
@@ -44,7 +44,7 @@ impl State {
         match self.val {
             StateVal::Normal => self.handle_event_normal(key),
             StateVal::Insert => self.handle_event_insert(key),
-            _ => {},
+            _ => {}
         }
     }
 
@@ -74,7 +74,8 @@ impl State {
     fn handle_event_insert(&mut self, key: Key) {
         match key {
             Key::Char('\n') => {
-                self.data_updates.push((self.cursor_pos.clone(), self.buffer.clone()));
+                self.data_updates
+                    .push((self.cursor_pos.clone(), self.buffer.clone()));
                 self.val = StateVal::Normal;
             }
             Key::Char(x) => {
@@ -104,7 +105,6 @@ impl State {
 
         self.cursor_pos = (x as usize, y as usize);
     }
-
 }
 
 #[derive(PartialEq)]

@@ -1,7 +1,7 @@
-use pest::Parser;
-use pest::iterators::Pair;
-use pest_derive::{Parser};
 use log::debug;
+use pest::iterators::Pair;
+use pest::Parser;
+use pest_derive::Parser;
 
 #[derive(Parser)]
 #[grammar = "lang.pest"]
@@ -42,7 +42,7 @@ pub fn convert_pair_to_cell_coord(pair: Pair<Rule>) -> (usize, usize) {
     let coord_0 = convert_alpha_str_to_num(alpha);
     let coord_1: usize = number.parse().unwrap();
     let coord_1 = coord_1;
-    return (coord_0, coord_1)
+    return (coord_0, coord_1);
 }
 
 pub fn convert_pair_to_operation(pair: Pair<Rule>) -> Operation {
@@ -61,7 +61,7 @@ pub fn convert_alpha_str_to_num(alpha: &str) -> usize {
     for (i, c) in alpha.chars().enumerate() {
         let digit = c.to_digit(26).unwrap() as usize;
         let digit = digit - 10;
-        acc += digit + (i*26);
+        acc += digit + (i * 26);
     }
     return acc;
 }

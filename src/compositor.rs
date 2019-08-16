@@ -1,8 +1,8 @@
 use tui::layout::Rect;
 
-use crate::viewer::{HEIGHT_LABEL_MARGIN, Item};
-use crate::state::StateInfo;
 use crate::data::Data;
+use crate::state::StateInfo;
+use crate::viewer::{Item, HEIGHT_LABEL_MARGIN};
 use log::debug;
 
 pub struct Compositor {
@@ -59,7 +59,7 @@ impl Compositor {
         for x in (0..self.get_n_wide()).map(|x| x + self.scroll_offset.0) {
             for y in (0..self.get_n_high()).map(|y| y + self.scroll_offset.1) {
                 if let Some(d) = data.get((x, y)) {
-                    drawable_data.push(((x,y), d.clone()));
+                    drawable_data.push(((x, y), d.clone()));
                 }
             }
         }
@@ -103,14 +103,18 @@ impl Compositor {
         let cursor_pos = self.real_cursor_pos;
         let mut draw_cursor = true;
 
-        let mut items: Vec<Item> = self.drawable_data.drain(..)
+        let mut items: Vec<Item> = self
+            .drawable_data
+            .drain(..)
             .map(|((x, y), v)| {
                 let v = if (x, y) == cursor_pos {
                     draw_cursor = false;
                     let mut tmp = "> ".to_string();
                     tmp.push_str(&v);
                     tmp
-                } else { v };
+                } else {
+                    v
+                };
                 let x = x as i32;
                 let x = x - scroll_offset.0 as i32;
                 let y = y as i32;

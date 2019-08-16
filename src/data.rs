@@ -1,7 +1,7 @@
-use std::collections::HashMap;
-use crate::viewer::Item;
 use crate::parse::{parse, Operation};
+use crate::viewer::Item;
 use log::debug;
+use std::collections::HashMap;
 
 type Coord = (usize, usize);
 

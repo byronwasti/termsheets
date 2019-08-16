@@ -1,6 +1,6 @@
 use tui::buffer::Buffer;
 use tui::layout::Rect;
-use tui::style::{Style, Modifier, Color};
+use tui::style::{Color, Modifier, Style};
 use tui::symbols::line;
 use tui::widgets::Widget;
 
@@ -40,7 +40,6 @@ impl<'a> SpreadsheetWidget<'a> {
             ..SpreadsheetWidget::default()
         }
     }
-
 
     pub fn set_cell_widths(
         mut self,
@@ -205,7 +204,11 @@ impl<'a> SpreadsheetWidget<'a> {
         }
 
         // Draw Data
-        for Item {position: (x, y), data: v} in self.data {
+        for Item {
+            position: (x, y),
+            data: v,
+        } in self.data
+        {
             let x1 = x;
             let x = area.left()
                 + self.cell_widths[0..*x as usize]
@@ -219,11 +222,13 @@ impl<'a> SpreadsheetWidget<'a> {
                     .map(|y| y + 1)
                     .sum::<u16>()
                 + 1;
-            buf.set_stringn(x, y,
-                            v,
-                            self.cell_widths[*x1 as usize] as usize,
-                            Style::default()
-                )
+            buf.set_stringn(
+                x,
+                y,
+                v,
+                self.cell_widths[*x1 as usize] as usize,
+                Style::default(),
+            )
         }
     }
 }
