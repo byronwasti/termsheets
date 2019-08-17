@@ -31,8 +31,12 @@ impl Data {
                 debug!("{:?} {:?} {:?}", &c1, &op, &c2);
                 let c1 = CellPos::new(c1.0, c1.1);
                 let c2 = CellPos::new(c2.0, c2.1);
+
+                self.update_dag(location, &[c1, c2]);
+
                 let c1 = self.get(c1);
                 let c2 = self.get(c2);
+
 
                 if let (Some(c1), Some(c2)) = (c1, c2) {
                     if let (Ok(c1), Ok(c2)) = (c1.parse::<i32>(), c2.parse::<i32>()) {
@@ -63,6 +67,16 @@ impl Data {
             val
         } else {
             self.cell_data.get(&location)
+        }
+    }
+
+    fn update_dag(&mut self, cell: CellPos, dependencies: &[CellPos]) {
+        for pos in dependencies {
+            if let Some(vec) = self.dag.get_mut(&pos) {
+                vec.push(cell);
+            } else {
+                self.dag.insert(*pos, vec![cell]);
+            }
         }
     }
 }

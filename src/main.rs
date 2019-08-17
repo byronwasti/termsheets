@@ -38,7 +38,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     loop {
         let state_info = state.get_info();
-        if state_info.exit {
+        if state_info.mode == state::StateVal::Exit {
             break;
         }
 

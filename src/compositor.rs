@@ -1,7 +1,7 @@
 use tui::layout::Rect;
 
 use crate::data::Data;
-use crate::state::StateInfo;
+use crate::state::{StateInfo, StateVal};
 use crate::viewer::{Item, HEIGHT_LABEL_MARGIN};
 use crate::position::CellPos;
 use log::debug;
@@ -13,7 +13,7 @@ pub struct Compositor {
     default_height: u16,
     area: Option<Rect>,
     drawable_data: Vec<(CellPos, String)>,
-    buffer: Option<String>,
+    state: Option<StateInfo>
 }
 
 impl Default for Compositor {
@@ -24,7 +24,7 @@ impl Default for Compositor {
             default_width: 10,
             default_height: 1,
             drawable_data: Vec::new(),
-            buffer: None,
+            state: None,
             area: None,
         }
     }
@@ -42,7 +42,7 @@ impl Compositor {
     pub fn set_state(&mut self, state: StateInfo) {
         self.cursor_pos = state.cursor_pos;
         self.handle_scrolling();
-        self.buffer = Some(state.buffer.to_owned());
+        self.state = Some(state);
     }
 
     pub fn set_data(&mut self, data: &Data) {
@@ -90,37 +90,58 @@ impl Compositor {
         let scroll_offset = self.scroll_offset;
         let cursor_pos = self.cursor_pos;
         let mut draw_cursor = true;
+        let mut drawable_data = self.drawable_data.to_owned();
 
-        let mut items: Vec<Item> = self
-            .drawable_data
+        let mut items: Vec<Item> = drawable_data
             .drain(..)
             .map(|(pos, val)| {
-                let val = if pos == cursor_pos {
+                if pos == cursor_pos {
+                    debug!("Cursor overlaps data {:?}", &cursor_pos);
                     draw_cursor = false;
-                    let mut tmp = "> ".to_string();
-                    tmp.push_str(&val);
-                    tmp
+                    self.get_drawable_cursor_cell(Some((pos, val)))
                 } else {
-                    val
-                };
-
-                let pos = pos - scroll_offset;
-                Item {
-                    position: (pos.x as u16, pos.y as u16),
-                    data: val,
+                    let pos = pos - scroll_offset;
+                    Item {
+                        position: (pos.x as u16, pos.y as u16),
+                        data: val,
+                    }
                 }
             })
             .collect();
 
         if draw_cursor {
-            let pos = cursor_pos - scroll_offset;
-            items.push(Item {
-                position: (pos.x as u16, pos.y as u16),
-                data: ">".to_string(),
-            });
+            let item = self.get_drawable_cursor_cell(None);
+            items.push(item);
         }
 
         return items;
+    }
+
+    fn get_drawable_cursor_cell(&self, data: Option<(CellPos, String)>) -> Item {
+        if let Some(state) = &self.state {
+            if state.mode == StateVal::Insert {
+                let pos = self.cursor_pos - self.scroll_offset;
+                return Item {
+                    position: (pos.x as u16, pos.y as u16),
+                    data: "> ".to_string() + &state.buffer,
+                }
+            }
+        }
+
+        if let Some((pos, val)) = data {
+            let val = "> ".to_string() + &val;
+            let pos = pos - self.scroll_offset;
+            Item {
+                position: (pos.x as u16, pos.y as u16),
+                data: val,
+            }
+        } else {
+            let pos = self.cursor_pos - self.scroll_offset;
+            Item {
+                position: (pos.x as u16, pos.y as u16),
+                data: ">".to_string(),
+            }
+        }
     }
 
     fn handle_scrolling(&mut self) {

@@ -4,9 +4,15 @@ use termion::event::Key;
 
 pub struct StateInfo {
     pub cursor_pos: CellPos,
-    pub mode: String,
-    pub exit: bool,
+    pub mode: StateVal,
     pub buffer: String,
+}
+
+#[derive(PartialEq, Copy, Clone)]
+pub enum StateVal {
+    Normal,
+    Insert,
+    Exit,
 }
 
 pub struct State {
@@ -29,15 +35,14 @@ impl State {
     pub fn get_info(&self) -> StateInfo {
         StateInfo {
             cursor_pos: self.cursor_pos,
-            mode: "Normal".to_string(),
-            exit: self.val == StateVal::Exit,
+            mode: self.val,
             buffer: self.buffer.clone(),
         }
     }
 
     pub fn update_data(&mut self, data: &mut Data) {
-        for d in self.data_updates.drain(..) {
-            data.insert(d.0, d.1);
+        for (pos, val) in self.data_updates.drain(..) {
+            data.insert(pos, val);
         }
     }
 
@@ -107,11 +112,4 @@ impl State {
     fn move_cursor_right(&mut self) {
         self.cursor_pos.x += 1;
     }
-}
-
-#[derive(PartialEq)]
-enum StateVal {
-    Normal,
-    Insert,
-    Exit,
 }
