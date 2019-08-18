@@ -56,6 +56,8 @@ impl Data {
             } else {
                 self.calculated.insert(location, "#PARSE_ERR".to_string());
             }
+        } else {
+            self.calculated.remove(&location);
         }
 
         self.cell_data.insert(location, value);
