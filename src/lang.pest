@@ -1,12 +1,15 @@
 WHITESPACE = _{ " " }
-alpha = @{('A'..'Z'|'a'..'z')+}
-number = @{ ASCII_DIGIT+ }
-cell = ${ alpha ~ number }
+ident = _{ SOI ~ "=" ~ expr ~ EOI }
+expr = { op ~ term* }
+term = _{ cell | num | "(" ~ expr ~ ")" }
 
-div = { "/" }
-mul = { "*" }
-add = { "+" }
-sub = { "-" }
-op = { div | mul | add | sub }
+op = @{ ASCII_ALPHANUMERIC+ }
 
-ident = _{ SOI ~ "=" ~ cell ~ op ~  cell ~ EOI }
+num = _{ float | int }
+float = @{ int ~ "." ~ ASCII_DIGIT* ~ (^"e" ~ int)? }
+int = @{ ("+" | "-")? ~ ASCII_DIGIT+ }
+
+cell = ${ cell_alpha ~ cell_number }
+cell_alpha = {('A'..'Z'|'a'..'z')+}
+cell_number = { ASCII_DIGIT+ }
+
