@@ -120,12 +120,9 @@ mod tests {
 
     #[test]
     fn test_parse() {
-        let parsed = parse("=A2 - B3");
-        assert!(parsed.is_ok());
-        let parsed = parsed.unwrap();
-        assert_eq!(parsed.0, (0, 2));
-        assert_eq!(parsed.1, (1, 3));
-        assert_eq!(parsed.2, Operation::Sub);
+        let input = "=add 2 (sub (mul 2 2) 3)";
+        let val = parse(input, &Data::new()).unwrap();
+        assert_eq!(val, 3);
     }
 
     #[test]
