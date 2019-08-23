@@ -21,7 +21,7 @@ impl Default for Compositor {
         Self {
             scroll_offset: CellPos::default(),
             cursor_pos: CellPos::default(),
-            default_width: 10,
+            default_width: 12,
             default_height: 1,
             drawable_data: Vec::new(),
             state: None,

@@ -44,17 +44,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         terminal.draw(|mut f| {
             let size = f.size();
-            let chunks = Layout::default()
-                .margin(0)
-                .direction(Direction::Vertical)
-                .constraints([Constraint::Percentage(70), Constraint::Percentage(30)].as_ref())
-                .split(f.size());
 
-            Block::default()
-                .borders(Borders::ALL)
-                .render(&mut f, chunks[1]);
-
-            compositor.set_area(chunks[0]);
+            compositor.set_area(size);
             compositor.set_state(state_info);
             compositor.set_data(&data);
 
@@ -68,7 +59,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .set_cell_widths(&widths, &w_labels)
                 .set_cell_heights(&heights, &h_labels)
                 .set_top_left(top_left)
-                .render(&mut f, chunks[0]);
+                .render(&mut f, size);
         })?;
 
         state.handle_event(events.next()?);
