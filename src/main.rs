@@ -9,8 +9,10 @@ use termion::screen::AlternateScreen;
 use tui::backend::TermionBackend;
 use tui::layout::{Constraint, Direction, Layout};
 use tui::style::{Color, Modifier, Style};
-use tui::widgets::{Block, Borders, List, Row, Table, Text, Widget};
+use tui::widgets::{Block, Borders, Paragraph, Text, Widget};
 use tui::Terminal;
+
+use log::debug;
 
 mod compositor;
 mod data;
@@ -49,6 +51,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             compositor.set_state(state_info);
             compositor.set_data(&data);
 
+            let cell_area = compositor.get_area_cells();
             let widths = compositor.get_widths();
             let heights = compositor.get_heights();
             let (w_labels, h_labels) = compositor.get_labels();
@@ -59,7 +62,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .set_cell_widths(&widths, &w_labels)
                 .set_cell_heights(&heights, &h_labels)
                 .set_top_left(top_left)
-                .render(&mut f, size);
+                .render(&mut f, cell_area);
+
+            if let Some(edit_area) = compositor.get_area_edit() {
+                let buffer = compositor.get_buffer();
+                let texts = [Text::raw(buffer)];
+                Paragraph::new(texts.iter())
+                    .block(Block::default().title("Edit").borders(Borders::ALL))
+                    .wrap(true)
+                    .render(&mut f, edit_area); 
+            }
         })?;
 
         state.handle_event(events.next()?);

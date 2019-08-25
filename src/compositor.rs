@@ -117,6 +117,38 @@ impl Compositor {
         return items;
     }
 
+    pub fn get_area_cells(&self) -> Rect {
+        if let (Some(state), Some(area)) = (&self.state, self.area) {
+            if state.mode == StateVal::Insert {
+                Rect::new(area.left(), area.top(), area.width, area.height - 10)
+            } else {
+                area
+            }
+        } else {
+            Rect::new(0, 0, 0, 0)
+        }
+    }
+
+    pub fn get_area_edit(&self) -> Option<Rect> {
+        if let (Some(state), Some(area)) = (&self.state, self.area) {
+            if state.mode == StateVal::Insert {
+                Some(Rect::new(area.left(), area.bottom()-10, area.width, 10))
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    }
+
+    pub fn get_buffer(&self) -> &str {
+        if let Some(state) = &self.state {
+            &state.buffer
+        } else {
+            &""
+        }
+    }
+
     fn get_drawable_cursor_cell(&self, data: Option<(CellPos, String)>) -> Item {
         if let Some(state) = &self.state {
             if state.mode == StateVal::Insert {
