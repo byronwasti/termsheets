@@ -7,7 +7,7 @@ use crate::position::CellPos;
 pub struct Data {
     cell_data: HashMap<CellPos, String>,
     calculated: HashMap<CellPos, String>,
-    dag: HashMap<CellPos, Vec<CellPos>>,
+    dag: (),
 }
 
 impl Default for Data {
@@ -15,7 +15,7 @@ impl Default for Data {
         Self {
             cell_data: HashMap::new(),
             calculated: HashMap::new(),
-            dag: HashMap::new(),
+            dag: (),
         }
     }
 }
@@ -51,11 +51,14 @@ impl Data {
 
     fn update_dag(&mut self, cell: CellPos, dependencies: &[CellPos]) {
         for pos in dependencies {
+            /*
             if let Some(vec) = self.dag.get_mut(&pos) {
                 vec.push(cell);
             } else {
                 self.dag.insert(*pos, vec![cell]);
             }
+            */
         }
     }
 }
+

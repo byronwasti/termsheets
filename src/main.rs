@@ -21,6 +21,7 @@ mod parse;
 mod position;
 mod state;
 mod viewer;
+mod graph;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Terminal initialization
