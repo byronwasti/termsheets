@@ -41,9 +41,8 @@ impl Data {
     }
 
     pub fn get(&self, location: CellPos) -> Option<&String> {
-        let val = self.calculated.get(&location);
-        if val.is_some() {
-            val
+        if let Some(val) = self.calculated.get(&location) {
+            Some(val)
         } else {
             self.cell_data.get(&location)
         }

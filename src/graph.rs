@@ -1,12 +1,13 @@
 use crate::position::CellPos;
 use std::collections::{HashMap, HashSet};
 
-#[derive(PartialEq, Eq, Hash, Clone, Copy)]
+#[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
 enum Neighbor {
     Incoming(CellPos),
     Outgoing(CellPos),
 }
 
+#[derive(Debug)]
 pub struct Dag {
     adjacency_list: HashMap<CellPos, HashSet<Neighbor>>,
 }
@@ -57,6 +58,21 @@ impl Dag {
                 }
             }
         }
+
+        self.adjacency_list.remove(&pos);
+    }
+
+    pub fn get_dependents(&self, pos: CellPos) -> Vec<CellPos> {
+        if let Some(l) = self.adjacency_list.get(&pos) {
+            l.iter()
+                .filter_map(|x| match x {
+                    Neighbor::Outgoing(v) => Some(*v),
+                    _ => None 
+                })
+                .collect()
+        } else {
+            Vec::new()
+        }
     }
 }
 
@@ -66,6 +82,16 @@ mod tests {
 
     #[test]
     fn test_graph() {
-        let g = Dag::new();
+        let mut g = Dag::new();
+        let p1 = CellPos::new(0, 0);
+        let p2 = CellPos::new(1, 2);
+
+        g.insert(p1, &[p2]);
+        let dep = g.get_dependents(p2);
+        assert_eq!(dep, vec![p1]);
+
+        g.remove(p1);
+        let dep = g.get_dependents(p2);
+        assert_eq!(dep, vec![]);
     }
 }
