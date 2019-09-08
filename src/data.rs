@@ -27,9 +27,9 @@ impl Data {
 
     pub fn insert(&mut self, location: CellPos, value: String) {
         if value.starts_with("=") {
-             let val = parse(&value, &self);
-             match val {
-                 Ok(val) => {
+             let out = parse(&value, &self);
+             match out {
+                 Ok((val, deps)) => {
                      self.calculated.insert(location, val.to_string());
                  },
                  Err(e) => {

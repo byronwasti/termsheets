@@ -3,6 +3,7 @@ use std::fmt;
 use pest::iterators::{Pair, Pairs};
 use pest::Parser;
 use pest_derive::Parser;
+use std::collections::HashSet;
 use crate::data::Data;
 use crate::position::CellPos;
 
@@ -39,13 +40,13 @@ enum Operation {
     Add,
 }
 
-pub fn parse(source: &str, data: &Data) -> Result<i32, LangError> {
+pub fn parse(source: &str, data: &Data) -> Result<(i32, HashSet<CellPos>), LangError> {
     debug!("Source string: {}", source);
     let mut ident = LangParser::parse(Rule::ident, source).map_err(|_| LangError::ParseError)?;
     handle_expression(ident.next().unwrap().into_inner(), data)
 }
 
-pub fn handle_expression(mut pairs: Pairs<Rule>, data: &Data) -> Result<i32, LangError> {
+pub fn handle_expression(mut pairs: Pairs<Rule>, data: &Data) -> Result<(i32, HashSet<CellPos>), LangError> {
     let op = pairs.next().unwrap();
     debug!("{}", &op);
     let op = match op.as_str() {
@@ -60,16 +61,22 @@ pub fn handle_expression(mut pairs: Pairs<Rule>, data: &Data) -> Result<i32, Lan
     }?;
 
     let mut vals = Vec::new();
+    let mut dependents = HashSet::new();
     for (idx, term) in pairs.enumerate() {
 
         let val = match term.as_rule() {
             Rule::cell => {
                 let coord = convert_pair_to_cell_coord(term);
+                dependents.insert(coord);
                 let val = data.get(coord).ok_or(LangError::RefError)?;
                 val.parse::<i32>().map_err(|_| LangError::RefError)?
             }
             Rule::int => term.as_str().parse::<i32>().map_err(|_| LangError::CellError)?,
-            Rule::expr => handle_expression(term.into_inner(), data)?,
+            Rule::expr => {
+                let (val, deps) = handle_expression(term.into_inner(), data)?;
+                dependents.extend(deps);
+                val
+            }
             n => {
                 debug!("Unexpected Rule: {:?}", n);
                 return Err(LangError::ParseError);
@@ -91,7 +98,7 @@ pub fn handle_expression(mut pairs: Pairs<Rule>, data: &Data) -> Result<i32, Lan
         Operation::Div => vals[0] / vals[1],
     };
 
-    Ok(out)
+    Ok((out, dependents))
 }
 
 pub fn convert_pair_to_cell_coord(pair: Pair<Rule>) -> CellPos {
