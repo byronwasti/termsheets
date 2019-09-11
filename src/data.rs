@@ -27,12 +27,15 @@ impl Data {
     }
 
     pub fn insert(&mut self, location: CellPos, value: String) {
+        self.calculated.remove(&location);
         if value.starts_with("=") {
             self.dag.remove(location);
             let out = parse(&value, &self);
             match out {
                 Ok((val, deps)) => {
                     self.calculated.insert(location, val.to_string());
+
+                    debug!("Calculated Cell Data {:?}: {}", location, &val);
                     self.dag.insert(location, &deps);
                 }
                 Err(e) => {
@@ -41,6 +44,7 @@ impl Data {
             }
         }
 
+        debug!("Raw Cell Data {:?}: {}", location, &value);
         self.cell_data.insert(location, value);
         self.update_using_dag(location);
     }
@@ -54,10 +58,14 @@ impl Data {
     }
 
     fn update_using_dag(&mut self, cell: CellPos) {
-        let traversal = self.dag.get_traversal(cell).unwrap();
+        let traversal = self.dag.get_topological_sort(cell).unwrap();
         debug!("Traversal of length {}", traversal.len());
         for dep in traversal {
             let val = self.cell_data.get(&dep).unwrap();
+            if !val.starts_with("=") {
+                continue;
+            }
+
             let out = parse(&val, &self);
             match out {
                 Ok((val, _)) => {

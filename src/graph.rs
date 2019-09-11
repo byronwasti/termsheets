@@ -78,31 +78,34 @@ impl Dag {
         }
     }
 
-    pub fn get_traversal(&self, pos: CellPos) -> Result<Vec<CellPos>, ()> {
-        let mut traversed = HashSet::new();
+    pub fn get_topological_sort(&self, pos: CellPos) -> Result<Vec<CellPos>, ()> {
+        let mut temporary = HashSet::new();
+        let mut permanent = HashSet::new();
         let mut order = Vec::new();
-        let mut queue = VecDeque::new();
+        let mut stack = VecDeque::new();
+        stack.push_back((pos, 0));
 
-        let initial_set = self.get_dependents(pos);
-        debug!("Initial set {}", initial_set.len());
-        for dep in initial_set {
-            traversed.insert(dep);
-            order.push(dep);
-            queue.push_back(dep);
-        }
-
-        while queue.len() > 0 {
-            let new_pos = queue.pop_front().unwrap();
-            for dep in self.get_dependents(new_pos) {
-                if traversed.get(&dep).is_some() {
+        while stack.len() > 0 {
+            let (n, pass) = stack.pop_back().unwrap();
+            if pass == 0 {
+                if permanent.get(&n).is_some() {
+                    continue;
+                }
+                if temporary.get(&n).is_some() {
                     return Err(());
                 }
-                traversed.insert(dep);
-                order.push(dep);
-                queue.push_back(dep);
+                temporary.insert(pos);
+                stack.push_back((n, 1));
+                for m in self.get_dependents(n) {
+                    stack.push_back((m, 0));
+                }
+            } else {
+                permanent.insert(n);
+                order.push(n);
             }
         }
 
+        order.reverse();
         Ok(order)
     }
 }
@@ -127,13 +130,15 @@ mod tests {
     }
 
     #[test]
-    fn test_graph_traverse() {
+    fn test_graph_topological() {
         let mut g = Dag::new();
         let p1 = CellPos::new(0, 0);
         let p2 = CellPos::new(1, 2);
+        let p3 = CellPos::new(1, 3);
 
         g.insert(p2, &[p1]);
-        let dep = g.get_traversal(p1).unwrap();
-        assert_eq!(dep, vec![p2]);
+        g.insert(p3, &[p1, p2]);
+        let dep = g.get_topological_sort(p1).unwrap();
+        assert_eq!(dep, vec![p1, p2, p3]);
     }
 }
