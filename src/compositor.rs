@@ -1,9 +1,9 @@
 use tui::layout::Rect;
 
 use crate::data::Data;
+use crate::position::CellPos;
 use crate::state::{StateInfo, StateVal};
 use crate::viewer::{Item, HEIGHT_LABEL_MARGIN};
-use crate::position::CellPos;
 use log::debug;
 
 pub struct Compositor {
@@ -13,7 +13,7 @@ pub struct Compositor {
     default_height: u16,
     area: Option<Rect>,
     drawable_data: Vec<(CellPos, String)>,
-    state: Option<StateInfo>
+    state: Option<StateInfo>,
 }
 
 impl Default for Compositor {
@@ -96,7 +96,6 @@ impl Compositor {
             .drain(..)
             .map(|(pos, val)| {
                 if pos == cursor_pos {
-                    debug!("Cursor overlaps data {:?}", &cursor_pos);
                     draw_cursor = false;
                     self.get_drawable_cursor_cell(Some((pos, val)))
                 } else {
@@ -132,7 +131,7 @@ impl Compositor {
     pub fn get_area_edit(&self) -> Option<Rect> {
         if let (Some(state), Some(area)) = (&self.state, self.area) {
             if state.mode == StateVal::Insert {
-                Some(Rect::new(area.left(), area.bottom()-10, area.width, 10))
+                Some(Rect::new(area.left(), area.bottom() - 10, area.width, 10))
             } else {
                 None
             }
@@ -156,7 +155,7 @@ impl Compositor {
                 return Item {
                     position: (pos.x as u16, pos.y as u16),
                     data: "> ".to_string() + &state.buffer,
-                }
+                };
             }
         }
 

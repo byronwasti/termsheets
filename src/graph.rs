@@ -1,5 +1,6 @@
 use crate::position::CellPos;
-use std::collections::{HashMap, HashSet};
+use log::debug;
+use std::collections::{HashMap, HashSet, VecDeque};
 
 #[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
 enum Neighbor {
@@ -31,14 +32,14 @@ impl Dag {
                 self.adjacency_list.insert(*neighbor, hs);
             }
         }
-    
+
         let hs: HashSet<_> = neighbors.iter().map(|n| Neighbor::Incoming(*n)).collect();
         self.adjacency_list.insert(pos, hs);
     }
 
     pub fn remove(&mut self, pos: CellPos) {
         if self.adjacency_list.get(&pos).is_none() {
-            return
+            return;
         }
 
         let l = self.adjacency_list.get(&pos).unwrap();
@@ -47,12 +48,14 @@ impl Dag {
         for neighbor in l {
             match neighbor {
                 Neighbor::Incoming(n) => {
-                    self.adjacency_list.get_mut(&n)
+                    self.adjacency_list
+                        .get_mut(&n)
                         .unwrap()
                         .remove(&Neighbor::Outgoing(pos));
                 }
                 Neighbor::Outgoing(n) => {
-                    self.adjacency_list.get_mut(&n)
+                    self.adjacency_list
+                        .get_mut(&n)
                         .unwrap()
                         .remove(&Neighbor::Incoming(pos));
                 }
@@ -67,12 +70,40 @@ impl Dag {
             l.iter()
                 .filter_map(|x| match x {
                     Neighbor::Outgoing(v) => Some(*v),
-                    _ => None 
+                    _ => None,
                 })
                 .collect()
         } else {
             Vec::new()
         }
+    }
+
+    pub fn get_traversal(&self, pos: CellPos) -> Result<Vec<CellPos>, ()> {
+        let mut traversed = HashSet::new();
+        let mut order = Vec::new();
+        let mut queue = VecDeque::new();
+
+        let initial_set = self.get_dependents(pos);
+        debug!("Initial set {}", initial_set.len());
+        for dep in initial_set {
+            traversed.insert(dep);
+            order.push(dep);
+            queue.push_back(dep);
+        }
+
+        while queue.len() > 0 {
+            let new_pos = queue.pop_front().unwrap();
+            for dep in self.get_dependents(new_pos) {
+                if traversed.get(&dep).is_some() {
+                    return Err(());
+                }
+                traversed.insert(dep);
+                order.push(dep);
+                queue.push_back(dep);
+            }
+        }
+
+        Ok(order)
     }
 }
 
@@ -86,12 +117,23 @@ mod tests {
         let p1 = CellPos::new(0, 0);
         let p2 = CellPos::new(1, 2);
 
-        g.insert(p1, &[p2]);
-        let dep = g.get_dependents(p2);
-        assert_eq!(dep, vec![p1]);
+        g.insert(p2, &[p1]);
+        let dep = g.get_dependents(p1);
+        assert_eq!(dep, vec![p2]);
 
-        g.remove(p1);
-        let dep = g.get_dependents(p2);
+        g.remove(p2);
+        let dep = g.get_dependents(p1);
         assert_eq!(dep, vec![]);
+    }
+
+    #[test]
+    fn test_graph_traverse() {
+        let mut g = Dag::new();
+        let p1 = CellPos::new(0, 0);
+        let p2 = CellPos::new(1, 2);
+
+        g.insert(p2, &[p1]);
+        let dep = g.get_traversal(p1).unwrap();
+        assert_eq!(dep, vec![p2]);
     }
 }

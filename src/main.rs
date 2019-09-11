@@ -16,12 +16,12 @@ use log::debug;
 
 mod compositor;
 mod data;
+mod graph;
 mod logger;
 mod parse;
 mod position;
 mod state;
 mod viewer;
-mod graph;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Terminal initialization
@@ -71,7 +71,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 Paragraph::new(texts.iter())
                     .block(Block::default().title("Edit").borders(Borders::ALL))
                     .wrap(true)
-                    .render(&mut f, edit_area); 
+                    .render(&mut f, edit_area);
             }
         })?;
 

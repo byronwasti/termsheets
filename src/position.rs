@@ -20,10 +20,7 @@ impl CellPos {
 
 impl Default for CellPos {
     fn default() -> CellPos {
-        CellPos {
-            x: 0,
-            y: 0,
-        }
+        CellPos { x: 0, y: 0 }
     }
 }
 

@@ -1,11 +1,11 @@
+use crate::data::Data;
+use crate::position::CellPos;
 use log::debug;
-use std::fmt;
 use pest::iterators::{Pair, Pairs};
 use pest::Parser;
 use pest_derive::Parser;
 use std::collections::HashSet;
-use crate::data::Data;
-use crate::position::CellPos;
+use std::fmt;
 
 #[derive(Parser)]
 #[grammar = "lang.pest"]
@@ -40,13 +40,20 @@ enum Operation {
     Add,
 }
 
-pub fn parse(source: &str, data: &Data) -> Result<(i32, HashSet<CellPos>), LangError> {
+/// Note: This returns all dependent cells from the parsing step
+/// ideally this was done in a different way
+pub fn parse(source: &str, data: &Data) -> Result<(i32, Vec<CellPos>), LangError> {
     debug!("Source string: {}", source);
     let mut ident = LangParser::parse(Rule::ident, source).map_err(|_| LangError::ParseError)?;
-    handle_expression(ident.next().unwrap().into_inner(), data)
+    let (val, mut deps) = handle_expression(ident.next().unwrap().into_inner(), data)?;
+    let deps = deps.drain().collect();
+    return Ok((val, deps));
 }
 
-pub fn handle_expression(mut pairs: Pairs<Rule>, data: &Data) -> Result<(i32, HashSet<CellPos>), LangError> {
+pub fn handle_expression(
+    mut pairs: Pairs<Rule>,
+    data: &Data,
+) -> Result<(i32, HashSet<CellPos>), LangError> {
     let op = pairs.next().unwrap();
     debug!("{}", &op);
     let op = match op.as_str() {
@@ -63,7 +70,6 @@ pub fn handle_expression(mut pairs: Pairs<Rule>, data: &Data) -> Result<(i32, Ha
     let mut vals = Vec::new();
     let mut dependents = HashSet::new();
     for (idx, term) in pairs.enumerate() {
-
         let val = match term.as_rule() {
             Rule::cell => {
                 let coord = convert_pair_to_cell_coord(term);
@@ -71,7 +77,10 @@ pub fn handle_expression(mut pairs: Pairs<Rule>, data: &Data) -> Result<(i32, Ha
                 let val = data.get(coord).ok_or(LangError::RefError)?;
                 val.parse::<i32>().map_err(|_| LangError::RefError)?
             }
-            Rule::int => term.as_str().parse::<i32>().map_err(|_| LangError::CellError)?,
+            Rule::int => term
+                .as_str()
+                .parse::<i32>()
+                .map_err(|_| LangError::CellError)?,
             Rule::expr => {
                 let (val, deps) = handle_expression(term.into_inner(), data)?;
                 dependents.extend(deps);
@@ -81,7 +90,6 @@ pub fn handle_expression(mut pairs: Pairs<Rule>, data: &Data) -> Result<(i32, Ha
                 debug!("Unexpected Rule: {:?}", n);
                 return Err(LangError::ParseError);
             }
-            
         };
         vals.push(val);
     }
@@ -128,7 +136,7 @@ mod tests {
     #[test]
     fn test_parse() {
         let input = "=add 2 (sub (mul 2 2) 3)";
-        let val = parse(input, &Data::new()).unwrap();
+        let (val, _) = parse(input, &Data::new()).unwrap();
         assert_eq!(val, 3);
     }
 
